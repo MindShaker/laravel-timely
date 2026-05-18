@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\usercontroller;
 use App\Http\Controllers\logscontroller;
+use Illuminate\Support\Facades\Schedule;
 
 
 Route::get('/', function () {
@@ -22,7 +23,7 @@ Route::post('/esp32/enroll-status', [usercontroller::class, 'receberStatusEnroll
 
 Route::post('/esp32/delete-finger-status', [usercontroller::class, 'receberStatusDeleteFinger']);
 
-
+//Schedule::command('ponto:verificar-lembretes')->dailyAt('05:00');
 
 Route::middleware('auth')->group(function () {
 

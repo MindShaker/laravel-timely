@@ -163,71 +163,68 @@ class logscontroller extends Controller
         return view("admin/createlogview", compact('users'));
     }
     public function createlog(Request $request)
-    {
-        $data = $request->validate([
-            'user_id' => ['required'],
-            'data' => ['required'],
-            'entrada' => ['required'],
-            'saida' => ['required'],
-            'obs' => ['required'],
-        ]);
+{
+    // 1. Validação robusta
+    $data = $request->validate([
+        'user_id' => ['required', 'exists:users,id'],
+        'data'    => ['required', 'date'],
+        'entrada' => ['required'],
+        'saida'   => ['required'],
+        'obs'     => ['required', 'string'],
+    ]);
 
-        $id = $request->user_id;
-        $user = User::findOrFail($id);
-        $users = User::all();
-        $logss = Logs::with('User')->where("user_id", $id)->get();
-        $datevalid = 0;
+    // 2. Otimização de Query (Substitui o foreach lento por um check direto no banco)
+    $logExists = Logs::where('user_id', '=',$request->user_id,'and')
+        ->where('data', $request->data)
+        ->exists();
 
-        foreach ($logss as $log) {
-            if ($log->data == $data["data"]) {
-                $datevalid = $datevalid + 1;
-            }
-        }
-
-        if ($datevalid == 0) {
-            $entry = Carbon::parse($data["entrada"]);
-            $exit = Carbon::parse($data["saida"]);
-
-            $inicio_almoco = Carbon::parse($user->inicio_almoco);
-            $fim_almoco = $inicio_almoco->copy()->addHour();
-            $endlunch = $fim_almoco->format('H:i');
-
-            $totalMinutos = $entry->diffInMinutes($exit);
-
-            if ($entry->lessThan($fim_almoco) && $exit->greaterThan($inicio_almoco)) {
-                $inicio_sobreposicao = $entry->greaterThan($inicio_almoco) ? $entry : $inicio_almoco;
-                $fim_sobreposicao = $exit->lessThan($fim_almoco) ? $exit : $fim_almoco;
-                $minutosDesconto = $inicio_sobreposicao->diffInMinutes($fim_sobreposicao);
-                $totalMinutos -= $minutosDesconto;
-            }
-
-            if ($totalMinutos < 0) {
-                $totalMinutos = 0;
-            }
-
-            $horas = floor($totalMinutos / 60);
-            $minutos = $totalMinutos % 60;
-            $total = sprintf('%02d:%02d', $horas, $minutos);
-
-            $adm = Auth::user()->name;
-
-            Logs::create([
-                'user_id' => $request->user_id,
-                'data' => $request->data,
-                'entrada' => $request->entrada,
-                'final_almoço' => $endlunch,
-                'saida' => $request->saida,
-                'total_horas' => $total,
-                'obs' => $request->obs,
-                'created_by' => $adm,
-                'updated_by' => "Not Updated",
-            ]);
-
-            return redirect(route('adminlogs', absolute: false));
-        } else {
-            return view("admin/createlogview", ["users" => $users])->with("message", "This user was already registered on this day");
-        }
+    if ($logExists) {
+        return redirect()->back()
+            ->withInput()
+            ->with('message', 'This user was already registered on this day');
     }
+
+    $user = User::findOrFail($request->user_id);
+
+    // 3. Cálculos de Tempo com Carbon
+    $entry = Carbon::parse($request->entrada);
+    $exit = Carbon::parse($request->saida);
+
+    $inicio_almoco = Carbon::parse($user->inicio_almoco);
+    $fim_almoco = $inicio_almoco->copy()->addHour();
+    $endlunch = $fim_almoco->format('H:i');
+
+    $totalMinutos = $entry->diffInMinutes($exit);
+
+    // Deduzir o tempo de almoço se houver sobreposição
+    if ($entry->lessThan($fim_almoco) && $exit->greaterThan($inicio_almoco)) {
+        $inicio_sobreposicao = $entry->greaterThan($inicio_almoco) ? $entry : $inicio_almoco;
+        $fim_sobreposicao = $exit->lessThan($fim_almoco) ? $exit : $fim_almoco;
+        $minutosDesconto = $inicio_sobreposicao->diffInMinutes($fim_sobreposicao);
+        $totalMinutos -= $minutosDesconto;
+    }
+
+    $totalMinutos = max(0, $totalMinutos);
+
+    $horas = floor($totalMinutos / 60);
+    $minutos = $totalMinutos % 60;
+    $total = sprintf('%02d:%02d', $horas, $minutos);
+
+    // 4. Criação estável do Log
+    Logs::create([
+        'user_id'      => $request->user_id,
+        'data'         => $request->data,
+        'entrada'      => $request->entrada,
+        'final_almoço' => $endlunch, 
+        'saida'        => $request->saida,
+        'total_horas'  => $total,
+        'obs'          => $request->obs,
+        'created_by'   => Auth::user()->name,
+        'updated_by'   => "Not Updated",
+    ]);
+
+    return redirect()->route('adminlogs')->with('success', 'Log created successfully!');
+}
 
     public function looklog($logs)
     {
@@ -332,7 +329,7 @@ class logscontroller extends Controller
             if (Auth::user()->tipo === 'admin') {
                 $logs->acao_personalizada = 'EDIT';
                 $logs->update($dadosPreparados);
-                return redirect()->route('adminlogs')->with("message", "Log atualizado com sucesso!");
+                return redirect()->route('adminlogs')->with("message", "Log updated successfully!");
             } else {
                 $approval = LogApproval::create([
                     'log_id' => $logs->id,
@@ -340,18 +337,15 @@ class logscontroller extends Controller
                     'dados_novos' => $dadosPreparados,
                     'status' => 'pending'
                 ]);
+
                 $admins = User::query()->where('tipo', 'admin')->get();
                 foreach ($admins as $admin) {
                     \Illuminate\Support\Facades\Mail::to($admin->email)
                         ->send(new \App\Mail\LogEditRequestMail(Auth::user(), $logs, $dadosPreparados, $approval->id));
                 }
-                return redirect()->route('userlogs')->with('message', 'O teu pedido de alteração foi enviado para aprovação dos administradores.');
-            }
-        } else {
-            if (request()->is('admin/*')) {
-                return view('admin/editlog', ["logs" => $logs, "users" => $user])->with("message", "This user was already registered on this day");
-            } else {
-                return view('user/editlog', ["logs" => $logs, "users" => $user])->with("message", "This user was already registered on this day");
+
+                
+                return redirect()->route('userlogs')->with('success', 'Your log modification request has been successfully submitted for approval.');
             }
         }
     }
@@ -540,7 +534,7 @@ class logscontroller extends Controller
 
         $logOriginal = logs::findOrFail($approval->log_id);
 
-         $dadosAntigos = $logOriginal->getAttributes();
+        $dadosAntigos = $logOriginal->getAttributes();
         $dadosNovosParaGuardar = is_array($approval->dados_novos)
             ? $approval->dados_novos
             : json_decode($approval->dados_novos, true);
@@ -554,7 +548,7 @@ class logscontroller extends Controller
             'admin_id' => Auth::id()
         ]);
 
-       \App\Models\AdminLog::create([
+        \App\Models\AdminLog::create([
             'log_id'        => $logOriginal->id,
             'user_id'       => $approval->user_id,
             'admin_id'      => Auth::id(),
@@ -591,7 +585,7 @@ class logscontroller extends Controller
 
         $logOriginal = logs::findOrFail($approval->log_id);
 
-        
+
         $approval->update([
             'status' => 'rejected',
             'admin_id' => Auth::id()
@@ -614,102 +608,102 @@ class logscontroller extends Controller
         }
 
         return redirect()->route('adminlogs')->with('message', 'Pedido de alteração rejeitado e utilizador notificado.');
-    }public function receberPontoDoEsp32(Request $request)
-{
-    try {
-        $userId = $request->user_id;
-        $user = User::findOrFail($userId);
+    }
+    public function receberPontoDoEsp32(Request $request)
+    {
+        try {
+            $userId = $request->user_id;
+            $user = User::findOrFail($userId);
 
-        $hoje = \Carbon\Carbon::now()->format('Y-m-d');
-        $agora = \Carbon\Carbon::now()->format('H:i');
+            $hoje = \Carbon\Carbon::now()->format('Y-m-d');
+            $agora = \Carbon\Carbon::now()->format('H:i');
 
-        $logHoje = \App\Models\Logs::where('user_id', '=',$userId,'and')
-            ->where('data', $hoje)
-            ->first();
+            $logHoje = \App\Models\Logs::where('user_id', '=', $userId, 'and')
+                ->where('data', $hoje)
+                ->first();
 
-       
+
             if (!$logHoje) {
-            $endlunch = \Carbon\Carbon::parse($user->inicio_almoco)->addHour();
+                $endlunch = \Carbon\Carbon::parse($user->inicio_almoco)->addHour();
 
-           
-            \App\Models\Logs::withoutEvents(function () use ($userId, $hoje, $agora, $endlunch) {
-                \App\Models\Logs::create([
-                    'user_id' => $userId,
-                    'data' => $hoje,
-                    'entrada' => $agora,
-                    'final_almoço' => $endlunch->format('H:i'),
-                    'saida' => "00:00",
-                    'total_horas' => "00:00",
-                    'obs' => "Automatic Log",
-                    'created_by' => "ESP32 System",
-                    'updated_by' => "Not Updated",
+
+                \App\Models\Logs::withoutEvents(function () use ($userId, $hoje, $agora, $endlunch) {
+                    \App\Models\Logs::create([
+                        'user_id' => $userId,
+                        'data' => $hoje,
+                        'entrada' => $agora,
+                        'final_almoço' => $endlunch->format('H:i'),
+                        'saida' => "00:00",
+                        'total_horas' => "00:00",
+                        'obs' => "Automatic Log",
+                        'created_by' => "ESP32 System",
+                        'updated_by' => "Not Updated",
+                    ]);
+                });
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Entrada registada para ' . $user->name,
+                    'hora' => $agora
                 ]);
-            });
+            }
+            if ($logHoje->saida == "00:00" || $logHoje->saida == "00:00:00") {
+                $entry = \Carbon\Carbon::parse($logHoje->entrada);
+                $exit = \Carbon\Carbon::parse($agora);
+                $inicio_almoco = \Carbon\Carbon::parse($user->inicio_almoco);
+                $fim_almoco = $inicio_almoco->copy()->addHour();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Entrada registada para ' . $user->name,
-                'hora' => $agora
-            ]);
-        }
- if ($logHoje->saida == "00:00" || $logHoje->saida == "00:00:00") {
-            $entry = \Carbon\Carbon::parse($logHoje->entrada);
-            $exit = \Carbon\Carbon::parse($agora);
-            $inicio_almoco = \Carbon\Carbon::parse($user->inicio_almoco);
-            $fim_almoco = $inicio_almoco->copy()->addHour();
+                $totalMinutos = $entry->diffInMinutes($exit);
 
-            $totalMinutos = $entry->diffInMinutes($exit);
+                if ($entry->lessThan($fim_almoco) && $exit->greaterThan($inicio_almoco)) {
+                    $inicio_sobreposicao = $entry->greaterThan($inicio_almoco) ? $entry : $inicio_almoco;
+                    $fim_sobreposicao = $exit->lessThan($fim_almoco) ? $exit : $fim_almoco;
+                    $minutosDesconto = $inicio_sobreposicao->diffInMinutes($fim_sobreposicao);
+                    $totalMinutos -= $minutosDesconto;
+                }
 
-            if ($entry->lessThan($fim_almoco) && $exit->greaterThan($inicio_almoco)) {
-                $inicio_sobreposicao = $entry->greaterThan($inicio_almoco) ? $entry : $inicio_almoco;
-                $fim_sobreposicao = $exit->lessThan($fim_almoco) ? $exit : $fim_almoco;
-                $minutosDesconto = $inicio_sobreposicao->diffInMinutes($fim_sobreposicao);
-                $totalMinutos -= $minutosDesconto;
+                $totalMinutos = max(0, $totalMinutos);
+                $horas = floor($totalMinutos / 60);
+                $minutos = $totalMinutos % 60;
+                $totalFormatado = sprintf('%02d:%02d', $horas, $minutos);
+
+                $logHoje->withoutEvents(function () use ($logHoje, $agora, $totalFormatado) {
+                    $logHoje->update([
+                        'saida' => $agora,
+                        'total_horas' => $totalFormatado,
+                        'updated_by' => "ESP32 System",
+                    ]);
+                });
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Saída registada para ' . $user->name,
+                    'total' => $totalFormatado
+                ]);
             }
 
-            $totalMinutos = max(0, $totalMinutos);
-            $horas = floor($totalMinutos / 60);
-            $minutos = $totalMinutos % 60;
-            $totalFormatado = sprintf('%02d:%02d', $horas, $minutos);
 
-            $logHoje->withoutEvents(function () use ($logHoje, $agora, $totalFormatado) {
-                $logHoje->update([
+            \App\Models\AdminLog::create([
+                'log_id'        => $logHoje->id,
+                'user_id'       => $userId,
+                'acao'          => 'AFTER HOURS',
+                'dados_antigos' => $logHoje->toArray(),
+                'dados_novos'   => [
                     'saida' => $agora,
-                    'total_horas' => $totalFormatado,
-                    'updated_by' => "ESP32 System",
-                ]);
-            });
+                    'obs'   => 'After Hours Attempt',
+                    'ip_origem' => $request->ip()
+                ]
+            ]);
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Saída registada para ' . $user->name,
-                'total' => $totalFormatado
-            ]);
+                'status' => 'error',
+                'message' => 'Já existe uma saída registada para hoje.'
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
         }
-
-        
-        \App\Models\AdminLog::create([
-            'log_id'        => $logHoje->id,
-            'user_id'       => $userId,
-            'acao'          => 'AFTER HOURS',
-            'dados_antigos' => $logHoje->toArray(),
-            'dados_novos'   => [
-                'saida' => $agora, 
-                'obs'   => 'After Hours Attempt',
-                'ip_origem' => $request->ip()
-            ]
-        ]);
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Já existe uma saída registada para hoje.'
-        ], 400);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage(),
-        ], 500);
     }
-}
 }

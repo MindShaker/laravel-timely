@@ -3,9 +3,53 @@
     <div class="">
 
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @if (session('success'))
+                <div class="flex items-center p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400"
+                    role="alert">
+                    <svg class="flex-shrink-0 w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                        fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
+                    </svg>
+
+                    <div class="ms-3 font-medium flex-1">
+                        <span class="font-bold">Sucess!</span> {{ session('success') }}
+                    </div>
+
+                    <button type="button" onclick="this.closest('[role=\'alert\']').remove()"
+                        class="ms-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex items-center justify-center h-8 w-8 dark:bg-gray-800 dark:text-green-400 dark:hover:bg-gray-700"
+                        aria-label="Close">
+                        <span class="sr-only">Close</span>
+                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 14 14">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                        </svg>
+                    </button>
+                </div>
+            @endif
+
+            @if (session('message'))
+                <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
+                    role="alert">
+                    <span class="font-medium">Attention!</span> {{ session('message') }}
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
+                    role="alert">
+                    <span class="font-medium">Please correct the following errors:</span>
+                    <ul class="mt-1.5 list-disc list-inside text-xs">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <div class="flex flex-row-reverse">
                 <a href ="/admin/createlogview">
-                <x-primary-app-button>ADD</x-primary-app-button>
+                    <x-primary-app-button>ADD</x-primary-app-button>
                 </a>
             </div>
 
@@ -35,14 +79,12 @@
                                     </div>
                                 </div>
                                 <div class ="ml-2">
-                                    <x-text-input type="month" name="month"
-                                            value="{{ request('month') }}"/>
+                                    <x-text-input type="month" name="month" value="{{ request('month') }}" />
                                 </div>
                                 <div class ="ml-2">
 
                                     <x-text-input type="number" min="1" max="30" name="time"
-                                        placeholder="DAY" value="{{ request('time') }}"
-                                        />
+                                        placeholder="DAY" value="{{ request('time') }}" />
                                 </div>
 
 
@@ -51,7 +93,7 @@
                                 </div>
                                 <div class="py-2">
                                     <a href="/admin/logs">
-                                        <x-refresh-icon/>
+                                        <x-refresh-icon />
                                     </a>
                                 </div>
 
@@ -78,8 +120,8 @@
                             </select>
                         </div>
                         <div>
-                           <x-secondary-app-button>
-                           <x-export-icon/>
+                            <x-secondary-app-button>
+                                <x-export-icon />
                             </x-secondary-app-button>
                         </div>
                     </div>
@@ -150,30 +192,32 @@
                                 </td>
                                 <td class="flex items-center px-4 py-4 text-gray-100">
                                     <a href ="/admin/looklog/{{ $log->id }}" class="mr-1">
-                                        <x-eye-icon/>
+                                        <x-eye-icon />
 
                                     </a>
 
                                     <a href ="/admin/editlog/{{ $log->id }}">
-                                        <x-edit-icon/>
+                                        <x-edit-icon />
                                     </a>
-                                    <button command="show-modal" style="cursor: pointer" commandfor="dialog{{ $log->id }}">
-                                        <x-trash-icon/>
+                                    <button command="show-modal" style="cursor: pointer"
+                                        commandfor="dialog{{ $log->id }}">
+                                        <x-trash-icon />
                                     </button>
                                 </td>
                                 <el-dialog>
-                                
-                                        <dialog id="dialog{{ $log->id }}" aria-labelledby="dialog-title{{ $log->id }}"
-                                            class="fixed inset-0 m-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent p-0 backdrop:bg-transparent">
-                                            <el-dialog-backdrop
-                                                class="fixed inset-0 bg-gray-900/50 transition-opacity data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in"></el-dialog-backdrop>
 
-                                            <div tabindex="0"
-                                                class="flex min-h-full items-end justify-center p-4 text-center focus:outline focus:outline-0 sm:items-center sm:p-0">
-                                                <el-dialog-panel
-                                                    class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-white/10 transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:max-w-lg data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95">
-                                                    <div class="bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                                                        <div class="sm:flex sm:items-start">
+                                    <dialog id="dialog{{ $log->id }}"
+                                        aria-labelledby="dialog-title{{ $log->id }}"
+                                        class="fixed inset-0 m-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent p-0 backdrop:bg-transparent">
+                                        <el-dialog-backdrop
+                                            class="fixed inset-0 bg-gray-900/50 transition-opacity data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in"></el-dialog-backdrop>
+
+                                        <div tabindex="0"
+                                            class="flex min-h-full items-end justify-center p-4 text-center focus:outline focus:outline-0 sm:items-center sm:p-0">
+                                            <el-dialog-panel
+                                                class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-white/10 transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:max-w-lg data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95">
+                                                <div class="bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                                    <div class="sm:flex sm:items-start">
 
                                                         <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
                                                             <h3 id="dialog-title"
@@ -192,15 +236,13 @@
                                                     <form action ="/admin/delete/{{ $log->id }}" method="post">
                                                         @csrf
                                                         @method('delete')
-                                                        <x-primary-red-button
-                                                            command="close" commandfor="dialog"
-                                                            >Delete</x-primary-red-button>
+                                                        <x-primary-red-button command="close"
+                                                            commandfor="dialog">Delete</x-primary-red-button>
 
 
                                                     </form>
-                                                    <x-secondary-red-button type="button"  command="close"
-                                                        commandfor="dialog{{ $log->id }}"
-                                                       >Cancel</x-secondary-red-button>
+                                                    <x-secondary-red-button type="button" command="close"
+                                                        commandfor="dialog{{ $log->id }}">Cancel</x-secondary-red-button>
 
                                                 </div>
                                             </el-dialog-panel>

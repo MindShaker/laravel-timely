@@ -23,13 +23,13 @@
                     <div>
                         <label for="entry"
                             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Entry</label>
-                        <x-text-input type="time" id="entry" min="08:00" value="{{ $logs->entrada }}" name="entrada" required />
+                        <x-text-input type="time" id="entry"  value="{{ $logs->entrada }}" name="entrada" required />
                     </div>
 
                     <div>
                         <label for="left" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Left
                             At</label>
-                        <x-text-input type="time" id="left" min="{{ $logs->entrada }}" value="{{ $logs->saida }}" name="saida"
+                        <x-text-input type="time" id="left"  value="{{ $logs->saida }}" name="saida"
                             required />
                     </div>
 
