@@ -103,10 +103,10 @@ class usercontroller extends Controller
             'inicio_almoco' => $request->lunch,
         ]);
 
-       return redirect(route('userlist', absolute: false))->with('success', 'Utilizador criado com sucesso!');
+       return redirect(route('userlist', absolute: false))->with('success', 'User created successfully!');
 
     } catch (\Exception $e) {
-       return back()->with('error', 'Ocorreu um erro ao criar o utilizador. Tenta novamente.')->withInput();
+       return back()->with('error', 'An error occurred while creating the user. Please try again.')->withInput();
     }
 }
     public function changeusertype(User $user)
@@ -143,7 +143,7 @@ class usercontroller extends Controller
                 return response()->json(['success' => true]);
             }
 
-            // Fallback caso a página seja acedida normalmente
+            
             return back()->with('success', "Comando enviado para o sensor! Peça ao funcionário {$user->name} para colocar o dedo na máquina.");
 
         } catch (\Exception $e) {
@@ -154,7 +154,7 @@ class usercontroller extends Controller
         }
     }
 
-    // ADICIONAR ESTA FUNÇÃO NOVA PARA O JAVASCRIPT CONSEGUIR LER O ESTADO
+    
     public function checkFingerStatus($id)
     {
         $user = User::findOrFail($id);

@@ -600,8 +600,7 @@ class logscontroller extends Controller
             'dados_novos'   => ['status' => 'rejected']
         ]);
 
-        // 6. Notificar o utilizador por Email
-        $solicitante = \App\Models\User::findOrFail($approval->user_id);
+       $solicitante = \App\Models\User::findOrFail($approval->user_id);
         if ($solicitante) {
             \Illuminate\Support\Facades\Mail::to($solicitante->email)
                 ->send(new \App\Mail\LogStatusUpdatedMail($solicitante, $logOriginal, 'rejected', []));

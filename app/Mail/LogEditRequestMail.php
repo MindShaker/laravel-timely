@@ -28,7 +28,7 @@ class LogEditRequestMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Pending Edit Request - ' . $this->solicitante->name,
+            subject: 'Pedido de Edição de Registo - ' . $this->solicitante->name,
         );
     }
 

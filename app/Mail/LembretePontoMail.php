@@ -19,7 +19,7 @@ class LembretePontoMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Aviso: Esquecimento de Registo de Ponto')
+        return $this->subject('Aviso: Falta de registo de ponto')
                     ->view('mails.lembrete_ponto');
     }
 }
