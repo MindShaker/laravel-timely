@@ -29,7 +29,8 @@ class logs extends Model
         'total_horas',
         'obs',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'status'
     ];
     
 }

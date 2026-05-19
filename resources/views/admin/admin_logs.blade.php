@@ -77,11 +77,13 @@
                                             {{-- Estado da Ação --}}
                                             @if ($log->acao == 'DELETE')
                                                 <span class="text-red-400 font-bold">{{ $log->acao }}</span>
-                                            @elseif($log->acao == 'APPROVED')
+                                            @elseif($log->acao == 'APPROVED' || $log->acao == 'CREATION_ACCEPTED')
+                                                {{-- Adicionado aqui --}}
                                                 <span class="text-blue-400 font-bold">{{ $log->acao }}</span>
                                             @elseif($log->acao == 'AFTER HOURS')
                                                 <span class="text-yellow-400 font-bold">{{ $log->acao }}</span>
-                                            @elseif($log->acao == 'REJECTED')
+                                            @elseif($log->acao == 'REJECTED' || $log->acao == 'CREATION_REJECTED')
+                                                {{-- Adicionado aqui --}}
                                                 <span class="text-red-500 font-bold">{{ $log->acao }}</span>
                                             @elseif($log->acao == 'ENTRY')
                                                 <span class="text-emerald-400 font-bold">{{ $log->acao }}</span>
@@ -89,7 +91,7 @@
                                                 <span class="text-green-400 font-bold">{{ $log->acao }}</span>
                                             @endif
 
-                                            @if ($log->admin_id)
+                                           @if ($log->admin_id)
                                                 <span class="text-[10px] text-gray-500 italic leading-tight mt-0.5">
                                                     by {{ $log->decisor->name ?? 'Unknown' }}
                                                 </span>

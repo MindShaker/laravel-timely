@@ -1,10 +1,14 @@
 <x-app-layout>
 
-    <div class="py-9">
+    <div class="">
 
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-
             <x-alerts />
+            <div class="flex flex-row-reverse">
+                <a href="{{ route('createlogview', ['mode' => 'user']) }}">
+                    <x-primary-app-button>ADD</x-primary-app-button>
+                </a>
+            </div>
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm">
                 
                     <div class="w-full p-6 text-gray-900 dark:text-gray-100 flex justify-between sm:flex flex-wrap">

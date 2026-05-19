@@ -7,7 +7,8 @@ use App\Models\User;
 use App\Models\logs;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\LembretePontoMail; 
+use App\Mail\LembretePontoMail;
+
 class CheckForgottenLog extends Command
 {
     protected $signature = 'timeclock:check-reminders';
@@ -27,14 +28,39 @@ class CheckForgottenLog extends Command
         $users = User::where('tipo', '=', 'user', 'and')->get();
 
         foreach ($users as $user) {
-            
-            $hasRecord = logs::where('user_id', '=', $user->id, 'and')
-                ->whereDate('data', $lastBusinessDay) 
-                ->exists();
+            $logsForDay = logs::where('user_id', '=', $user->id,'and')
+                ->whereDate('data', $lastBusinessDay)
+                ->get();
 
-            if (!$hasRecord) {
-                Mail::to($user->email)->send(new LembretePontoMail($lastBusinessDay->format('d/m/Y')));
-                $this->info("Reminder sent to: " . $user->email);
+            $shouldSendReminder = false;
+
+            if ($logsForDay->isEmpty()) {
+                $shouldSendReminder = true;
+            } else {
+                $hasValidExit = $logsForDay->contains(function ($l) {
+                    $saida = trim((string) $l->saida);
+                    if ($saida === '' || $saida === '00:00' || $saida === '00:00:00' || $saida === '0' || $saida === null) {
+                        return false;
+                    }
+                    return true;
+                });
+
+                if (! $hasValidExit) {
+                    $shouldSendReminder = true;
+                }
+            }
+
+            if ($shouldSendReminder) {
+                if (filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+                    try {
+                         Mail::to($user->email)->send(new LembretePontoMail($lastBusinessDay->format('d/m/Y')));
+                        $this->info("Reminder sent to: " . $user->email);
+                    } catch (\Exception $e) {
+                        $this->error("Failed to send to: " . $user->email . " | Error: " . $e->getMessage());
+                    }
+                } else {
+                     $this->error("Invalid email format for User ID {$user->id}: " . $user->email);
+                }
             }
         }
     }
