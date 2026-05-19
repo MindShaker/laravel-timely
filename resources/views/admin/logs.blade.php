@@ -39,9 +39,9 @@
                                     <x-text-input type="month" name="month" value="{{ request('month') }}" />
                                 </div>
                                 <div class ="ml-2">
-
-                                    <x-text-input type="number" min="1" max="30" name="time"
-                                        placeholder="DAY" value="{{ request('time') }}" />
+                                    <input type="number" min="1" max="30" name="time"
+                                        placeholder="DAY" value="{{ request('time') }}"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-yellow-500 focus:border-yellow-500 p-2.5 w-24 appearance-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-white dark:text-white dark:focus:ring-yellow-500 dark:focus:border-yellow-500" />
                                 </div>
 
 

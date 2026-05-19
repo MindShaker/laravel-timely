@@ -273,13 +273,18 @@ class logscontroller extends Controller
     }
     public function approveNewLog($id)
     {
+        if (!Auth::check()) {
+            session(['url.intended' => URL::full()]);
+            return redirect()->route('login');
+        }
+
         if (Auth::user()->tipo !== 'admin') {
-            return redirect()->route('userlogs')->with('error', 'Não tens permissão.');
+            return redirect()->route('userlogs')->with('error', 'Dont have permission.');
         }
 
         $log = Logs::findOrFail($id);
         if ($log->status !== 'pending') {
-            return redirect()->route('adminlogs')->with('error', 'Este pedido de novo log já foi processado anteriormente.');
+            return redirect()->route('adminlogs')->with('error', 'This new log request has already been processed.');
         }
 
         $dadosAntigos = $log->getAttributes();
@@ -297,16 +302,25 @@ class logscontroller extends Controller
         ]);
         $log->load('user');
         Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'approved'));
-        return redirect()->route('adminlogs')->with('message', 'Novo log aprovado com sucesso!');
+
+        return view('admin.action_result', [
+            'success' => true,
+            'message' => 'New log request approved successfully.'
+        ]);
     }
     public function rejectNewLog($id)
     {
+        if (!Auth::check()) {
+            session(['url.intended' => URL::full()]);
+            return redirect()->route('login');
+        }
+
         if (Auth::user()->tipo !== 'admin') {
-            return redirect()->route('userlogs')->with('error', 'Não tens permissão.');
+            return redirect()->route('userlogs')->with('error', 'Dont have permission.');
         }
         $log = Logs::findOrFail($id);
         if ($log->status !== 'pending') {
-            return redirect()->route('adminlogs')->with('error', 'Este pedido de novo log já foi processado anteriormente.');
+            return redirect()->route('adminlogs')->with('error', 'This new log request has already been processed.');
         }
         $dadosAntigos = $log->getAttributes();
         $log->withoutEvents(function () use ($log) {
@@ -323,7 +337,11 @@ class logscontroller extends Controller
         ]);
         $log->load('user');
         Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'rejected'));
-        return redirect()->route('adminlogs')->with('message', 'Pedido de novo log rejeitado.');
+
+        return view('admin.action_result', [
+            'success' => false,
+            'message' => 'New log request rejected.'
+        ]);
     }
     public function looklog($logs)
     {
@@ -603,7 +621,10 @@ class logscontroller extends Controller
             \Illuminate\Support\Facades\Mail::to($solicitante->email)
                 ->send(new \App\Mail\LogStatusUpdatedMail($solicitante, $logOriginal, 'approved', $dadosNovosParaGuardar));
         }
-        return redirect()->route('adminlogs')->with('message', 'Aproved, user notified!');
+        return view('admin.action_result', [
+            'success' => true,
+            'message' => 'New log request approved successfully and user notified!'
+        ]);
     }
     public function rejectLog($id)
     {
@@ -637,7 +658,10 @@ class logscontroller extends Controller
                 ->send(new \App\Mail\LogStatusUpdatedMail($solicitante, $logOriginal, 'rejected', []));
         }
 
-        return redirect()->route('adminlogs')->with('message', 'Rejected, user notified!');
+        return view('admin.action_result', [
+            'success' => false,
+            'message' => 'New log request rejected and user notified.'
+        ]);
     }
     public function receberPontoDoEsp32(Request $request)
     {
