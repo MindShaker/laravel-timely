@@ -19,5 +19,5 @@
         <a href="{{ $rejectUrl }}" style="background-color: #ef4444; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Rejeitar</a>
     </p>
     
-    <p style="font-size: 12px; color: #9ca3af; margin-top: 40px;">Este e-mail foi gerado pelo Sistema Timely.</p>
+    <p style="font-size: 12px; color: #9ca3af; margin-top: 40px;">Este e-mail foi gerado pelo Sistema Timely e expira em 1 Hora.</p>
 </div>

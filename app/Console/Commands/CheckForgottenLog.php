@@ -20,15 +20,19 @@ class CheckForgottenLog extends Command
         if ($today->isWeekend() || $this->isHoliday($today)) {
             return;
         }
+
         $lastBusinessDay = $today->copy()->subDay();
         while ($lastBusinessDay->isWeekend() || $this->isHoliday($lastBusinessDay)) {
             $lastBusinessDay->subDay();
         }
 
-        $users = User::where('tipo', '=', 'user', 'and')->get();
+        // Apenas users com notificações ativas
+        $users = User::where('tipo', '=', 'user', 'and')
+            ->where('notifications', 1)
+            ->get();
 
         foreach ($users as $user) {
-            $logsForDay = Logs::where('user_id', '=', $user->id,'and')
+            $logsForDay = Logs::where('user_id', '=', $user->id, 'and')
                 ->whereDate('data', $lastBusinessDay)
                 ->get();
 
@@ -39,13 +43,10 @@ class CheckForgottenLog extends Command
             } else {
                 $hasValidExit = $logsForDay->contains(function ($l) {
                     $saida = trim((string) $l->saida);
-                    if ($saida === '' || $saida === '00:00' || $saida === '00:00:00' || $saida === '0' || $saida === null) {
-                        return false;
-                    }
-                    return true;
+                    return !in_array($saida, ['', '00:00', '00:00:00', '0']) && $saida !== null;
                 });
 
-                if (! $hasValidExit) {
+                if (!$hasValidExit) {
                     $shouldSendReminder = true;
                 }
             }
@@ -53,13 +54,13 @@ class CheckForgottenLog extends Command
             if ($shouldSendReminder) {
                 if (filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
                     try {
-                         Mail::to($user->email)->send(new LembretePontoMail($lastBusinessDay->format('d/m/Y')));
+                        Mail::to($user->email)->send(new LembretePontoMail($lastBusinessDay->format('d/m/Y')));
                         $this->info("Reminder sent to: " . $user->email);
                     } catch (\Exception $e) {
                         $this->error("Failed to send to: " . $user->email . " | Error: " . $e->getMessage());
                     }
                 } else {
-                     $this->error("Invalid email format for User ID {$user->id}: " . $user->email);
+                    $this->error("Invalid email format for User ID {$user->id}: " . $user->email);
                 }
             }
         }
@@ -67,28 +68,19 @@ class CheckForgottenLog extends Command
 
     private function isHoliday($date)
     {
-        $year = $date->year;
+        $year    = $date->year;
         $monthDay = $date->format('m-d');
 
         $fixedHolidays = [
-            '01-01',
-            '04-25',
-            '05-01',
-            '06-10',
-            '08-15',
-            '10-05',
-            '11-01',
-            '12-01',
-            '12-08',
-            '12-25'
+            '01-01', '04-25', '05-01', '06-10',
+            '08-15', '10-05', '11-01', '12-01',
+            '12-08', '12-25',
         ];
 
         if (in_array($monthDay, $fixedHolidays)) return true;
 
-        $easterDays = easter_days($year);
-        $easter = Carbon::createFromDate($year, 3, 21)->addDays($easterDays);
-
-        $goodFriday = $easter->copy()->subDays(2);
+        $easter       = Carbon::createFromDate($year, 3, 21)->addDays(easter_days($year));
+        $goodFriday   = $easter->copy()->subDays(2);
         $corpusChristi = $easter->copy()->addDays(60);
 
         return $date->isSameDay($goodFriday) || $date->isSameDay($corpusChristi);

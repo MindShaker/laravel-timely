@@ -92,8 +92,9 @@ class LogApprovalController extends Controller
         ]);
 
         $log->load('user');
-        Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'approved'));
-
+        if ($log->user->notifications) {
+            Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'approved'));
+        }
         $processor = $this->getProcessor($log->id);
         return $this->actionResultView(
             true,
@@ -146,8 +147,9 @@ class LogApprovalController extends Controller
         ]);
 
         $log->load('user');
-        Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'rejected'));
-
+        if ($log->user->notifications) {
+            Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'rejected'));
+        }
         $processor = $this->getProcessor($log->id);
         return $this->actionResultView(
             false,
@@ -274,10 +276,10 @@ class LogApprovalController extends Controller
     }
 
     private function notifyUser(int $userId, Logs $log, string $status, array $dados): void
-    {
-        $user = User::findOrFail($userId);
-        if ($user) {
-            Mail::to($user->email)->send(new \App\Mail\LogStatusUpdatedMail($user, $log, $status, $dados));
-        }
+{
+    $user = User::findOrFail($userId);
+    if ($user && $user->notifications) {
+        Mail::to($user->email)->send(new \App\Mail\LogStatusUpdatedMail($user, $log, $status, $dados));
     }
+}
 }

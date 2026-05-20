@@ -203,12 +203,16 @@ class logscontroller extends Controller
     ]);
 
     if (!$isAdmin) {
-        Mail::to($user->email)->send(new \App\Mail\UserLogConfirmationMail($log));
-
+        // Notifica o próprio user (só se tiver notificações ativas)
+        if ($user->notifications) {
+            Mail::to($user->email)->send(new \App\Mail\UserLogConfirmationMail($log));
+        }
+ 
         $approveUrl = URL::temporarySignedRoute('admin.approve_new_log', now()->addHour(), ['id' => $log->id]);
         $rejectUrl  = URL::temporarySignedRoute('admin.reject_new_log',  now()->addHour(), ['id' => $log->id]);
-
-        foreach (User::where('tipo', '=','admin','and')->get() as $admin) {
+ 
+        // Notifica apenas os admins com notificações ativas
+        foreach (User::where('tipo', '=', 'admin', 'and')->where('notifications', 1)->get() as $admin) {
             Mail::to($admin->email)->send(new \App\Mail\NewLogRequestMail($log, $user, $approveUrl, $rejectUrl));
         }
     }
@@ -248,55 +252,56 @@ class logscontroller extends Controller
     public function updatelog(Logs $logs, Request $request)
     {
         $this->authorizeLogAccess($logs);
-
+ 
         $data = $request->validate([
             'data'    => ['required'],
             'obs'     => ['required'],
             'saida'   => ['required'],
             'entrada' => ['required'],
         ]);
-
+ 
         $user  = User::findOrFail($request->user_id);
         $taken = Logs::with('User')
             ->where('user_id', $user->id)
             ->where('data', $data['data'])
             ->where('id', '!=', $logs->id)
             ->exists();
-
+ 
         if ($taken) {
             return redirect()->back()->withInput()->with('message', 'A log already exists for that date.');
         }
-
+ 
         $endlunch = Carbon::parse($user->inicio_almoco)->addHour()->format('H:i');
         $total    = $data['saida'] !== '00:00'
             ? $this->calcTotal($data['entrada'], $data['saida'], $user->inicio_almoco)
             : '00:00:00';
-
+ 
         $dadosPreparados = array_merge($data, [
             'total_horas'  => $total,
             'final_almoço' => $endlunch,
             'updated_by'   => Auth::user()->name,
         ]);
-
+ 
         if (Auth::user()->tipo === 'admin') {
             $logs->acao_personalizada = 'EDIT';
             $logs->update($dadosPreparados);
             return redirect()->route('adminlogs')->with('message', 'Log updated successfully!');
         }
-
+ 
         $approval = LogApproval::create([
             'log_id'      => $logs->id,
             'user_id'     => Auth::user()->id,
-            'dados_novos' => $dadosPreparados,
+            'dados_novos' => (object) $dadosPreparados,
             'status'      => 'pending',
         ]);
-
-        foreach (User::where('tipo','=', 'admin','and')->get() as $admin) {
+ 
+        // Notifica apenas admins com notificações ativas
+        foreach (User::where('tipo', '=', 'admin', 'and')->where('notifications', 1)->get() as $admin) {
             Mail::to($admin->email)->send(
                 new \App\Mail\LogEditRequestMail(Auth::user(), $logs, $dadosPreparados, $approval->id)
             );
         }
-
+ 
         return redirect()->route('userlogs')
             ->with('success', 'Your log modification request has been successfully submitted for approval.');
     }
