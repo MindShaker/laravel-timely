@@ -140,77 +140,89 @@ class logscontroller extends Controller
         return view('admin/admin_logs', compact('admin_logs', 'users'));
     }
     
-    public function createlogview(Request $request)
+    public function createlogview(
+    )
     {
-        if (Auth::user()->tipo === 'admin' && $request->query('mode') !== 'user') {
-            return view("admin/createlogview", ['users' => User::all()]);
-        }
+         return view("admin/createlogview", ['users' => User::all()]);
+        
+            
+    }
+    public function usercreatelogview()
+    {
+        
         return view("user/createlogview");
     }
 
+
     public function createlog(Request $request)
-    {
-        $isAdmin       = Auth::user()->tipo === 'admin';
-        $isFromAdmin   = $request->has('user_id');
+{
+    $isAdmin = Auth::user()->tipo === 'admin';
+    
+    $isFromAdmin = $isAdmin && $request->filled('user_id');
 
-        $rules = [
-            'data'    => ['required', 'date'],
-            'entrada' => ['required'],
-            'saida'   => ['required'],
-            'obs'     => ['required', 'string'],
-        ];
-        if ($isFromAdmin) $rules['user_id'] = ['required', 'exists:users,id'];
-
-        $request->validate($rules);
-
-        $userId = $isFromAdmin ? $request->user_id : Auth::id();
-        $user   = User::findOrFail($userId);
-
-        $logExists = Logs::where('user_id', '=', $userId, 'and')
-            ->where('data', $request->data)
-            ->whereIn('status', ['approved', 'pending'])
-            ->exists();
-
-        if ($logExists) {
-            return redirect()->back()->withInput()
-                ->with('message', 'A log record or pending request already exists for this day.');
-        }
-
-        $endlunch = Carbon::parse($user->inicio_almoco)->addHour();
-        $total    = $this->calcTotal($request->entrada, $request->saida, $user->inicio_almoco);
-
-        $log = Logs::create([
-            'user_id'      => $userId,
-            'data'         => $request->data,
-            'entrada'      => $request->entrada,
-            'final_almoço' => $endlunch->format('H:i'),
-            'saida'        => $request->saida,
-            'total_horas'  => $total,
-            'obs'          => $request->obs,
-            'created_by'   => Auth::user()->name,
-            'updated_by'   => 'Not Updated',
-            'status'       => $isAdmin ? 'approved' : 'pending',
-        ]);
-
-        if (!$isAdmin) {
-            Mail::to($user->email)->send(new \App\Mail\UserLogConfirmationMail($log));
-
-            $approveUrl = URL::temporarySignedRoute('admin.approve_new_log', now()->addHour(), ['id' => $log->id]);
-            $rejectUrl  = URL::temporarySignedRoute('admin.reject_new_log',  now()->addHour(), ['id' => $log->id]);
-
-            foreach (User::where('tipo','=', 'admin','and')->get() as $admin) {
-                Mail::to($admin->email)->send(new \App\Mail\NewLogRequestMail($log, $user, $approveUrl, $rejectUrl));
-            }
-        }
-
-        if (!$isFromAdmin) {
-            return redirect()->route('userlogs')->with('success', $isAdmin
-                ? 'Log criado com sucesso!'
-                : 'O teu pedido foi enviado para aprovação!');
-        }
-
-        return redirect()->route('adminlogs')->with('success', 'Log created successfully!');
+    $rules = [
+        'data'    => ['required', 'date'],
+        'entrada' => ['required'],
+        'saida'   => ['required'],
+        'obs'     => ['required', 'string'],
+    ];
+    
+    if ($isFromAdmin) {
+        $rules['user_id'] = ['required', 'exists:users,id'];
     }
+
+    $request->validate($rules);
+
+    $userId = $isFromAdmin ? $request->user_id : Auth::id();
+    $user   = User::findOrFail($userId);
+
+     $logExists = Logs::where('user_id','=', $userId,'and')
+        ->where('data', $request->data)
+        ->whereIn('status', ['approved', 'pending'])
+        ->exists();
+
+    if ($logExists) {
+        return redirect()->back()->withInput()
+            ->with('message', 'A log record or pending request already exists for this day.');
+    }
+
+    $endlunch = Carbon::parse($user->inicio_almoco)->addHour();
+    $total    = $this->calcTotal($request->entrada, $request->saida, $user->inicio_almoco);
+
+    $log = Logs::create([
+        'user_id'      => $userId,
+        'data'         => $request->data,
+        'entrada'      => $request->entrada,
+        'final_almoço' => $endlunch->format('H:i'),
+        'saida'        => $request->saida,
+        'total_horas'  => $total,
+        'obs'          => $request->obs,
+        'created_by'   => Auth::user()->name,
+        'updated_by'   => 'Not Updated',
+        'status'       => $isAdmin ? 'approved' : 'pending',
+    ]);
+
+    if (!$isAdmin) {
+        Mail::to($user->email)->send(new \App\Mail\UserLogConfirmationMail($log));
+
+        $approveUrl = URL::temporarySignedRoute('admin.approve_new_log', now()->addHour(), ['id' => $log->id]);
+        $rejectUrl  = URL::temporarySignedRoute('admin.reject_new_log',  now()->addHour(), ['id' => $log->id]);
+
+        foreach (User::where('tipo', '=','admin','and')->get() as $admin) {
+            Mail::to($admin->email)->send(new \App\Mail\NewLogRequestMail($log, $user, $approveUrl, $rejectUrl));
+        }
+    }
+
+    if ($isAdmin) {
+        if ($isFromAdmin) {
+            return redirect()->route('adminlogs')->with('success', 'Log created and approved successfully!');
+        }
+       return redirect()->route('userlogs')->with('success', 'Log created and approved successfully!');
+    }
+
+   
+    return redirect()->route('userlogs')->with('success', 'Your log request has been submitted for approval!');
+}
 
    public function looklog($logs)
     {

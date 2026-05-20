@@ -5,7 +5,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-alerts />
             <div class="flex flex-row-reverse">
-                <a href="{{ route('createlogview', ['mode' => 'user']) }}">
+                <a href="{{ route('usercreatelogview', ['mode' => 'user']) }}">
                     <x-primary-app-button>ADD</x-primary-app-button>
                 </a>
             </div>

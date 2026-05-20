@@ -34,12 +34,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile',    [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
- 
+    Route::post('/createlog',                   [logscontroller::class, 'createlog'])->name('createlog');
     
     Route::prefix('user')->group(function () {
         Route::get('/logs',                         [logscontroller::class, 'userlogs'])->name('userlogs');
         Route::get('/home',                         [logscontroller::class, 'homepage'])->name('home');
         Route::post('/home/create',                 [logscontroller::class, 'userlogcreate'])->name('logcreate');
+        Route::get('/createlogview',                [logscontroller::class, 'usercreatelogview'])->name('usercreatelogview');
         Route::get('/clockfinish/{logs}',           [logscontroller::class, 'userlogup'])->name('clockfinish');
         Route::put('/clockfinishupdate/{logs}',     [logscontroller::class, 'userlogupdate'])->name('clockfinishupdate');
         Route::get('/looklog/{logs}',               [logscontroller::class, 'looklog'])->name('userlooklog');
@@ -48,11 +49,12 @@ Route::middleware('auth')->group(function () {
         Route::delete('/delete/{logs}',             [logscontroller::class, 'deletelog'])->name('deleteuserlog');
     });
  
-    Route::prefix('admin')->group(function () {
+    Route::prefix('admin')->middleware('is_admin')->group(function () {
+
  
         Route::get('/logs',                         [logscontroller::class, 'adminlogs'])->name('adminlogs');
         Route::get('/createlogview',                [logscontroller::class, 'createlogview'])->name('createlogview');
-        Route::post('/createlog',                   [logscontroller::class, 'createlog'])->name('createlog');
+        
         Route::delete('/delete/{logs}',             [logscontroller::class, 'deletelog'])->name('deletelog');
         Route::get('/looklog/{logs}',               [logscontroller::class, 'looklog']);
         Route::get('/editlog/{logs}',               [logscontroller::class, 'editlog']);
