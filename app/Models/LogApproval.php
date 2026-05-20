@@ -14,7 +14,7 @@ class LogApproval extends Model
 
     public function log()
     {
-        return $this->belongsTo(logs::class, 'log_id');
+        return $this->belongsTo(Logs::class, 'log_id');
     }
 
     public function solicitante()

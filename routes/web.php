@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\usercontroller;
 use App\Http\Controllers\logscontroller;
 use App\Http\Controllers\Exportcontroller;
-use App\Http\Controllers\LogApprovalcontroller;
+use App\Http\Controllers\Logapprovalcontroller;
 use App\Http\Controllers\Esp32controller;
  
  
@@ -22,7 +22,7 @@ Route::get('/welcome', function () {
 })->name('welcome');
  
 
-Route::post('/esp32/ponto', [Esp32Controller::class, 'receberPontoDoEsp32']);
+Route::post('/esp32/ponto', [Esp32controller::class, 'receberPontoDoEsp32']);
 Route::post('/esp32/enroll-status', [usercontroller::class, 'receberStatusEnroll']);
 Route::post('/esp32/delete-finger-status', [usercontroller::class, 'receberStatusDeleteFinger']);
  
@@ -59,15 +59,15 @@ Route::middleware('auth')->group(function () {
         Route::put('/editlog/{logs}/update',        [logscontroller::class, 'updatelog'])->name('updatelog');
         Route::get('/admin-logs',                   [logscontroller::class, 'adminLogsAudit'])->name('admin.adminlogs');
  
-        Route::get('/export',                       [ExportController::class, 'export'])->name('export');
-        Route::get('/export/logs',                  [ExportController::class, 'exportuserlog'])->name('exportuserlog');
+        Route::get('/export',                       [Exportcontroller::class, 'export'])->name('export');
+        Route::get('/export/logs',                  [Exportcontroller::class, 'exportuserlog'])->name('exportuserlog');
         Route::get('/export/users',                 [usercontroller::class, 'exportusers'])->name('exportusers');
  
-        Route::get('/approve-log/{id}',             [LogApprovalController::class, 'approveLog'])->name('admin.approve_log');
-        Route::get('/reject-log/{id}',              [LogApprovalController::class, 'rejectLog'])->name('admin.reject_log');
+        Route::get('/approve-log/{id}',             [Logapprovalcontroller::class, 'approveLog'])->name('admin.approve_log');
+        Route::get('/reject-log/{id}',              [Logapprovalcontroller::class, 'rejectLog'])->name('admin.reject_log');
  
-        Route::get('/approve-new-log/{id}',         [LogApprovalController::class, 'approveNewLog'])->name('admin.approve_new_log');
-        Route::get('/reject-new-log/{id}',          [LogApprovalController::class, 'rejectNewLog'])->name('admin.reject_new_log');
+        Route::get('/approve-new-log/{id}',         [Logapprovalcontroller::class, 'approveNewLog'])->name('admin.approve_new_log');
+        Route::get('/reject-new-log/{id}',          [Logapprovalcontroller::class, 'rejectNewLog'])->name('admin.reject_new_log');
  
          Route::get('/users',                        [usercontroller::class, 'userlist'])->name('userlist');
         Route::post('/users/{id}/delete-finger',    [usercontroller::class, 'deleteFinger'])->name('users.delete_finger');
