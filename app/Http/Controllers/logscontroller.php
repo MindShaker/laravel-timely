@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use \App\Models\logs;
+use App\Models\Logs;
 use \App\Models\User;
 use \App\Models\LogApproval;
 use \App\Models\AdminLog;
@@ -271,7 +271,7 @@ class logscontroller extends Controller
 
         return redirect()->route('adminlogs')->with('success', 'Log criado e aprovado com sucesso!');
     }
-    public function approveNewLog($id)
+    public function approveNewLog(Request $request, $id)
     {
         if (!Auth::check()) {
             session(['url.intended' => URL::full()]);
@@ -283,8 +283,47 @@ class logscontroller extends Controller
         }
 
         $log = Logs::findOrFail($id);
+
+        // If link signature is invalid/expired, show action page with current status
+        if (method_exists($request, 'hasValidSignature') && !$request->hasValidSignature()) {
+            $processor = AdminLog::where('log_id','=', $log->id,'and')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $message = 'This link is invalid or has expired.';
+            $success = ($log->status === 'approved');
+            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
+
+            return view('admin.action_result', [
+                'success' => $success,
+                'message' => $message,
+                'details' => [
+                    'status' => $log->status,
+                    'processed_by' => $who,
+                    'processed_at' => $processor?->created_at?->toDateTimeString(),
+                ],
+            ]);
+        }
+
+        // If already processed, show action page with details
         if ($log->status !== 'pending') {
-            return redirect()->route('adminlogs')->with('error', 'This new log request has already been processed.');
+            $processor = AdminLog::where('log_id','=', $log->id,'and')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $message = 'This new log request has already been processed.';
+            $success = ($log->status === 'approved');
+            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
+
+            return view('admin.action_result', [
+                'success' => $success,
+                'message' => $message,
+                'details' => [
+                    'status' => $log->status,
+                    'processed_by' => $who,
+                    'processed_at' => $processor?->created_at?->toDateTimeString(),
+                ],
+            ]);
         }
 
         $dadosAntigos = $log->getAttributes();
@@ -303,12 +342,21 @@ class logscontroller extends Controller
         $log->load('user');
         Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'approved'));
 
+        $processor = AdminLog::where('log_id','=', $log->id,'and')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
         return view('admin.action_result', [
             'success' => true,
-            'message' => 'New log request approved successfully.'
+            'message' => 'New log request approved successfully.',
+            'details' => [
+                'status' => 'approved',
+                'processed_by' => $processor?->decisor?->name ?? Auth::user()->name,
+                'processed_at' => $processor?->created_at?->toDateTimeString(),
+            ],
         ]);
     }
-    public function rejectNewLog($id)
+    public function rejectNewLog(Request $request, $id)
     {
         if (!Auth::check()) {
             session(['url.intended' => URL::full()]);
@@ -319,9 +367,49 @@ class logscontroller extends Controller
             return redirect()->route('userlogs')->with('error', 'Dont have permission.');
         }
         $log = Logs::findOrFail($id);
-        if ($log->status !== 'pending') {
-            return redirect()->route('adminlogs')->with('error', 'This new log request has already been processed.');
+
+        // If link signature is invalid/expired, show action page with current status
+        if (method_exists($request, 'hasValidSignature') && !$request->hasValidSignature()) {
+            $processor = AdminLog::where('log_id','=', $log->id,'and')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $message = 'This link is invalid or has expired.';
+            $success = ($log->status === 'approved');
+            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
+
+            return view('admin.action_result', [
+                'success' => $success,
+                'message' => $message,
+                'details' => [
+                    'status' => $log->status,
+                    'processed_by' => $who,
+                    'processed_at' => $processor?->created_at?->toDateTimeString(),
+                ],
+            ]);
         }
+
+        // If already processed, show action page with details
+        if ($log->status !== 'pending') {
+            $processor = AdminLog::where('log_id','=', $log->id,'and')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $message = 'This new log request has already been processed.';
+            $success = ($log->status === 'approved');
+            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
+
+            return view('admin.action_result', [
+                'success' => $success,
+                'message' => $message,
+                'details' => [
+                    'status' => $log->status,
+                    'processed_by' => $who,
+                    'processed_at' => $processor?->created_at?->toDateTimeString(),
+                ],
+            ]);
+        }
+
         $dadosAntigos = $log->getAttributes();
         $log->withoutEvents(function () use ($log) {
             $log->status = 'rejected';
@@ -338,14 +426,23 @@ class logscontroller extends Controller
         $log->load('user');
         Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'rejected'));
 
+        $processor = AdminLog::where('log_id','=', $log->id,'and')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
         return view('admin.action_result', [
             'success' => false,
-            'message' => 'New log request rejected.'
+            'message' => 'New log request rejected.',
+            'details' => [
+                'status' => 'rejected',
+                'processed_by' => $processor?->decisor?->name ?? Auth::user()->name,
+                'processed_at' => $processor?->created_at?->toDateTimeString(),
+            ],
         ]);
     }
     public function looklog($logs)
     {
-        $logs = \App\Models\logs::findOrFail($logs);
+        $logs = \App\Models\Logs::findOrFail($logs);
         if ($logs->user_id !== Auth::user()->id && Auth::user()->tipo !== 'admin') {
             return redirect()->back()->with('error', 'Unauthorized access');
         }
@@ -591,10 +688,63 @@ class logscontroller extends Controller
         if (Auth::user()->tipo !== 'admin') {
             return redirect()->route('userlogs')->with('error', 'You do not have permission to approve logs.');
         }
+
         $approval = LogApproval::findOrFail($id);
+
+        // If already processed, show action page with details
         if ($approval->status !== 'pending') {
-            return redirect()->route('adminlogs')->with('error', 'This request has already been processed (approved or rejected) previously.');
+            $processor = AdminLog::where('log_id','=', $approval->log_id,'and')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $message = 'This request has already been processed.';
+            $success = ($approval->status === 'approved');
+            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
+
+            return view('admin.action_result', [
+                'success' => $success,
+                'message' => $message,
+                'details' => [
+                    'status' => $approval->status,
+                    'processed_by' => $who,
+                    'processed_at' => $processor?->created_at?->toDateTimeString(),
+                ],
+            ]);
         }
+
+        // If the approval link expired, reject and show result
+        if ($approval->created_at->copy()->addMinutes(60)->isPast()) {
+            $logOriginal = logs::findOrFail($approval->log_id);
+            $dadosAntigos = $logOriginal->getAttributes();
+            $approval->update([
+                'status' => 'rejected',
+                'admin_id' => Auth::id()
+            ]);
+            \App\Models\AdminLog::create([
+                'log_id'        => $logOriginal->id,
+                'user_id'       => $approval->user_id,
+                'admin_id'      => Auth::id(),
+                'acao'          => 'REJECTED',
+                'dados_antigos' => $dadosAntigos,
+                'dados_novos'   => ['status' => 'rejected']
+            ]);
+            $solicitante = \App\Models\User::findOrFail($approval->user_id);
+            if ($solicitante) {
+                \Illuminate\Support\Facades\Mail::to($solicitante->email)
+                    ->send(new \App\Mail\LogStatusUpdatedMail($solicitante, $logOriginal, 'rejected', []));
+            }
+
+            return view('admin.action_result', [
+                'success' => false,
+                'message' => 'Link expired. The request was rejected.',
+                'details' => [
+                    'status' => 'rejected',
+                    'processed_by' => Auth::user()->name,
+                    'processed_at' => now()->toDateTimeString(),
+                ],
+            ]);
+        }
+
         $logOriginal = logs::findOrFail($approval->log_id);
         $dadosAntigos = $logOriginal->getAttributes();
         $dadosNovosParaGuardar = is_array($approval->dados_novos)
@@ -623,7 +773,12 @@ class logscontroller extends Controller
         }
         return view('admin.action_result', [
             'success' => true,
-            'message' => 'New log request approved successfully and user notified!'
+            'message' => 'New log request approved successfully and user notified!',
+            'details' => [
+                'status' => 'approved',
+                'processed_by' => Auth::user()->name,
+                'processed_at' => now()->toDateTimeString(),
+            ],
         ]);
     }
     public function rejectLog($id)
@@ -631,14 +786,63 @@ class logscontroller extends Controller
         if (Auth::user()->tipo !== 'admin') {
             return redirect()->route('userlogs')->with('error', 'You do not have permission to reject logs.');
         }
+
         $approval = LogApproval::findOrFail($id);
+
+        // If already processed, show action page with details
         if ($approval->status !== 'pending') {
-            return redirect()->route('adminlogs')->with('error', 'This request has already been processed (approved or rejected) previously.');
+            $processor = AdminLog::where('log_id', '=', $approval->log_id, 'and')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $message = 'This request has already been processed.';
+            $success = ($approval->status === 'approved');
+            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
+
+            return view('admin.action_result', [
+                'success' => $success,
+                'message' => $message,
+                'details' => [
+                    'status' => $approval->status,
+                    'processed_by' => $who,
+                    'processed_at' => $processor?->created_at?->toDateTimeString(),
+                ],
+            ]);
         }
+
+        // Expired: mark rejected and show result
         if ($approval->created_at->copy()->addMinutes(60)->isPast()) {
-            $approval->update(['status' => 'rejected']);
-            return redirect()->route('adminlogs')->with('error', 'Link expired.');
+            $logOriginal = logs::findOrFail($approval->log_id);
+            $dadosAntigos = $logOriginal->getAttributes();
+            $approval->update([
+                'status' => 'rejected',
+                'admin_id' => Auth::id()
+            ]);
+            \App\Models\AdminLog::create([
+                'log_id'        => $approval->log_id,
+                'user_id'       => $approval->user_id,
+                'admin_id'      => Auth::id(),
+                'acao'          => 'REJECTED',
+                'dados_antigos' => $dadosAntigos,
+                'dados_novos'   => ['status' => 'rejected']
+            ]);
+            $solicitante = \App\Models\User::findOrFail($approval->user_id);
+            if ($solicitante) {
+                \Illuminate\Support\Facades\Mail::to($solicitante->email)
+                    ->send(new \App\Mail\LogStatusUpdatedMail($solicitante, $logOriginal, 'rejected', []));
+            }
+
+            return view('admin.action_result', [
+                'success' => false,
+                'message' => 'Link expired. The request was rejected and user notified.',
+                'details' => [
+                    'status' => 'rejected',
+                    'processed_by' => Auth::user()->name,
+                    'processed_at' => now()->toDateTimeString(),
+                ],
+            ]);
         }
+
         $logOriginal = logs::findOrFail($approval->log_id);
         $approval->update([
             'status' => 'rejected',
@@ -660,7 +864,12 @@ class logscontroller extends Controller
 
         return view('admin.action_result', [
             'success' => false,
-            'message' => 'New log request rejected and user notified.'
+            'message' => 'New log request rejected and user notified.',
+            'details' => [
+                'status' => 'rejected',
+                'processed_by' => Auth::user()->name,
+                'processed_at' => now()->toDateTimeString(),
+            ],
         ]);
     }
     public function receberPontoDoEsp32(Request $request)

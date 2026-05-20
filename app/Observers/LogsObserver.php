@@ -2,13 +2,13 @@
 
 namespace App\Observers;
 
-use App\Models\logs;
+use App\Models\Logs;
 use App\Models\AdminLog;
 use Illuminate\Support\Facades\Auth;
 
 class LogsObserver
 {
-    public function updated(logs $logs)
+    public function updated(Logs $logs)
     {
         $acao = $logs->acao_personalizada ?? $logs->tipo_acao_custom ?? ($logs->is_clock_out ? 'EXIT' : 'EDIT');
 
@@ -27,7 +27,7 @@ class LogsObserver
         ]);
     }
 
-    public function deleted(logs $logs)
+    public function deleted(Logs $logs)
     {
         // Eliminações são sempre registadas
         AdminLog::create([

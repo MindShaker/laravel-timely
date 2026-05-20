@@ -77,8 +77,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/reject-log/{id}', [App\Http\Controllers\logscontroller::class, 'rejectLog'])->name('admin.reject_log');
 
         
-Route::get('/approve-new-log/{id}', [App\Http\Controllers\logscontroller::class, 'approveNewLog'])->name('admin.approve_new_log')->middleware('signed');
-Route::get('/reject-new-log/{id}', [App\Http\Controllers\logscontroller::class, 'rejectNewLog'])->name('admin.reject_new_log')->middleware('signed');
+Route::get('/approve-new-log/{id}', [App\Http\Controllers\logscontroller::class, 'approveNewLog'])->name('admin.approve_new_log');
+Route::get('/reject-new-log/{id}', [App\Http\Controllers\logscontroller::class, 'rejectNewLog'])->name('admin.reject_new_log');
         Route::get('/users/{id}/finger-status', [usercontroller::class, 'checkFingerStatus'])->name('users.finger_status');
     });
 

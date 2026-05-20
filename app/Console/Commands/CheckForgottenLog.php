@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\User;
-use App\Models\logs;
+use App\Models\Logs;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\LembretePontoMail;
@@ -28,7 +28,7 @@ class CheckForgottenLog extends Command
         $users = User::where('tipo', '=', 'user', 'and')->get();
 
         foreach ($users as $user) {
-            $logsForDay = logs::where('user_id', '=', $user->id,'and')
+            $logsForDay = Logs::where('user_id', '=', $user->id,'and')
                 ->whereDate('data', $lastBusinessDay)
                 ->get();
 

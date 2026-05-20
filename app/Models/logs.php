@@ -4,13 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class logs extends Model
+class Logs extends Model
 {
- 
- public function User(){
-   
-    return $this->belongsTo(User::class);
-}
+    public function User(){
+        return $this->belongsTo(User::class);
+    }
 
     public $is_clock_out = false;
     public $autor_personalizado = null; 
