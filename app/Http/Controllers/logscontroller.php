@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Logs;
+use App\Models\logs;
 use \App\Models\User;
 use \App\Models\LogApproval;
 use \App\Models\AdminLog;
@@ -465,7 +465,7 @@ class logscontroller extends Controller
             return view("user/editlog", ["logs" => $logs, "users" => $users]);
         }
     }
-    public function updatelog(Logs $logs, Request $request)
+    public function updatelog(logs $logs, Request $request)
     {
         if ($logs->user_id !== Auth::user()->id && Auth::user()->tipo !== 'admin') {
             return redirect()->back()->with('error', 'Unauthorized access');
@@ -478,7 +478,7 @@ class logscontroller extends Controller
         ]);
         $id = $request->user_id;
         $user = User::findOrFail($id);
-        $logss = Logs::with('User')->where("user_id", $id)->get();
+        $logss = logs::with('User')->where("user_id", $id)->get();
         $datevalid = 0;
 
         foreach ($logss as $log) {
