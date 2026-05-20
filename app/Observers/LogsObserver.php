@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Models\logs;
+use App\Models\Logs;
 use App\Models\AdminLog;
 use Illuminate\Support\Facades\Auth;
 

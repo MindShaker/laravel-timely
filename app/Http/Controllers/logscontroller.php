@@ -4,188 +4,154 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\logs;
-use \App\Models\User;
-use \App\Models\LogApproval;
-use \App\Models\AdminLog;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Models\Logs;
+use App\Models\User;
+use App\Models\LogApproval;
+use App\Models\AdminLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
-use App\Mail\NewLogStatusMail;
 
 class logscontroller extends Controller
 {
-
-    public function userlogs(Request $request)
+   private function calcTotal(string $entrada, string $saida, string $inicioAlmoco): string
     {
-        $id = Auth::user()->id;
-
-        $logs = Logs::with('User')
-            ->where('user_id', $id)
-            ->where('status', 'approved');
-
-        if ($request->month != "") {
-            $date = $request->month;
-            $logs->where('data', 'like', "$date%");
-        }
-
-        if ($request->time != "") {
-            $date = $request->time;
-            $logs->whereDay('data', "$date%");
-        }
-
-        $logs = $logs->orderBy('data', 'DESC')->paginate(10);
-
-        return view('user/logs', compact('logs'));
-    }
-    public function homepage(Request $request)
-    {
-        $id = Auth::user()->id;
-        $users = User::findOrFail($id);
-        $data = Carbon::now()->format('Y-m-d');
-        $logs = Logs::all();
-        $aux = 0;
-        foreach ($logs as $log) {
-            if ($log->data == $data) {
-                if ($log->user_id == $id) {
-
-                    $aux = 1;
-
-                    if ($log->saida == "00:00:00") {
-                        return view("user/clockfinish", ['logs' => $log], ['users' => $users]);
-                    } else
-                        return view("user/clockfinished", ['logs' => $log]);
-                }
-            }
-        }
-        if ($aux == 0) {
-            return view("user/home");
-        }
-    }
-
-    public function userlogcreate(Request $request)
-    {
-
-        $id = Auth::user()->id;
-        $user = User::findOrFail($id);
-        $data = Carbon::now()->format('Y-m-d');
-        $entrada = Carbon::now()->format('H:i');
-        $endlunch = Carbon::parse($user->inicio_almoco);
-        $aux = $endlunch->hour;
-        $aux = $aux + 1;
-        $endlunch->hour = $aux;
-
-
-        $logs = Logs::create([
-            'user_id' => $id,
-            'data' => $data,
-            'entrada' => $entrada,
-            'final_almoço' => $endlunch,
-            'saida' => "00:00",
-            "total_horas" => "00:00",
-            "obs" => "Manual Log",
-            "created_by" => $user->name,
-            "updated_by" => "Not Updated",
-        ]);
-        $id = $logs->id;
-
-        return redirect(route('clockfinish', ['logs' => $logs], ['users' => $user]));
-    }
-    public function userlogup(Logs $logs)
-    {
-        return view("user/clockfinish", compact('logs'));
-    }
-    public function userlogupdate(Logs $logs)
-    {
-        $id = Auth::user()->id;
-        $user = User::findOrFail($id);
-
-        $entry = Carbon::parse($logs->entrada);
-        $saida = Carbon::now()->format('H:i');
-        $exit = Carbon::parse($saida);
-
-        $inicio_almoco = Carbon::parse($user->inicio_almoco);
-        $fim_almoco = $inicio_almoco->copy()->addHour();
+        $entry         = Carbon::parse($entrada);
+        $exit          = Carbon::parse($saida);
+        $inicio_almoco = Carbon::parse($inicioAlmoco);
+        $fim_almoco    = $inicio_almoco->copy()->addHour();
 
         $totalMinutos = $entry->diffInMinutes($exit);
 
         if ($entry->lessThan($fim_almoco) && $exit->greaterThan($inicio_almoco)) {
             $inicio_sobreposicao = $entry->greaterThan($inicio_almoco) ? $entry : $inicio_almoco;
-            $fim_sobreposicao = $exit->lessThan($fim_almoco) ? $exit : $fim_almoco;
-            $minutosDesconto = $inicio_sobreposicao->diffInMinutes($fim_sobreposicao);
-            $totalMinutos -= $minutosDesconto;
+            $fim_sobreposicao    = $exit->lessThan($fim_almoco) ? $exit : $fim_almoco;
+            $totalMinutos       -= $inicio_sobreposicao->diffInMinutes($fim_sobreposicao);
         }
 
-        if ($totalMinutos < 0) {
-            $totalMinutos = 0;
+        $totalMinutos = max(0, $totalMinutos);
+        return sprintf('%02d:%02d', floor($totalMinutos / 60), $totalMinutos % 60);
+    }
+     public function homepage(Request $request)
+    {
+        $id    = Auth::user()->id;
+        $users = User::findOrFail($id);
+        $data  = Carbon::now()->format('Y-m-d');
+
+        $log = Logs::where('data','=', $data,'and')->where('user_id', $id)->first();
+
+        if (!$log) {
+            return view("user/home");
         }
 
-        $horas = floor($totalMinutos / 60);
-        $minutos = $totalMinutos % 60;
-        $total = sprintf('%02d:%02d', $horas, $minutos);
+        if ($log->saida == "00:00:00") {
+            return view("user/clockfinish", ['logs' => $log, 'users' => $users]);
+        }
 
-        $data = [
-            'saida' => $saida,
-            "total_horas" => $total,
-            "updated_by" => $user->name,
-        ];
+        return view("user/clockfinished", ['logs' => $log]);
+    }
+
+    public function userlogcreate(Request $request)
+    {
+        $id   = Auth::user()->id;
+        $user = User::findOrFail($id);
+
+        $endlunch = Carbon::parse($user->inicio_almoco)->addHour();
+
+        $logs = Logs::create([
+            'user_id'      => $id,
+            'data'         => Carbon::now()->format('Y-m-d'),
+            'entrada'      => Carbon::now()->format('H:i'),
+            'final_almoço' => $endlunch,
+            'saida'        => '00:00',
+            'total_horas'  => '00:00',
+            'obs'          => 'Manual Log',
+            'created_by'   => $user->name,
+            'updated_by'   => 'Not Updated',
+        ]);
+
+        return redirect(route('clockfinish', ['logs' => $logs]));
+    }
+
+    public function userlogup(Logs $logs)
+    {
+        return view("user/clockfinish", compact('logs'));
+    }
+
+    public function userlogupdate(Logs $logs)
+    {
+        $user  = User::findOrFail(Auth::user()->id);
+        $saida = Carbon::now()->format('H:i');
+        $total = $this->calcTotal($logs->entrada, $saida, $user->inicio_almoco);
 
         $logs->tipo_acao_custom = 'EXIT';
-        $logs->update($data);
+        $logs->update(['saida' => $saida, 'total_horas' => $total, 'updated_by' => $user->name]);
 
         return view("user/clockfinished", ['logs' => $logs]);
+    }
+
+    public function userlogs(Request $request)
+    {
+        $query = Logs::with('User')
+            ->where('user_id', Auth::user()->id)
+            ->where('status', 'approved');
+
+        if ($request->month != "") $query->where('data', 'like', $request->month . '%');
+        if ($request->time  != "") $query->whereDay('data', $request->time);
+
+        $logs = $query->orderBy('data', 'DESC')->paginate(10);
+        return view('user/logs', compact('logs'));
     }
 
     public function adminlogs(Request $request)
     {
         $users = User::all();
+        $query = Logs::with('User')->where('status', 'approved');
 
-        // Inicializa os logs com o relacionamento e força o filtro pelo status 'approved'
-        $logs = Logs::with('User')->where('status', 'approved');
+        if ($request->name  != "") $query->whereHas('user', fn($q) => $q->where('name', $request->name));
+        if ($request->month != "") $query->where('data', 'like', $request->month . '%');
+        if ($request->time  != "") $query->whereDay('data', $request->time);
 
-        // Mantém o teu filtro por nome do utilizador
-        if ($request->name != "") {
-            $logs->whereHas('user', function ($query) use ($request) {
-                $query->where('name', $request->name);
-            });
-        }
-
-        // Mantém o teu filtro por mês
-        if ($request->month != "") {
-            $date = $request->month;
-            $logs->where('data', 'like', "$date%");
-        }
-
-        // Mantém o teu filtro por dia
-        if ($request->time != "") {
-            $date = $request->time;
-            $logs->whereDay('data', "$date%");
-        }
-
-        // Mantém a tua ordenação exata por data e entrada, com paginação de 10
-        $logs = $logs->orderBy('data', 'DESC')
-            ->orderBy('entrada', 'DESC')
-            ->paginate(10);
-
+        $logs = $query->orderBy('data', 'DESC')->orderBy('entrada', 'DESC')->paginate(10);
         return view('admin/logs', compact('logs', 'users'));
     }
 
+    public function adminLogsAudit(Request $request)
+    {
+        $users = User::all();
+        $query = AdminLog::with(['autor', 'decisor']);
+
+        if ($request->filled('name')) {
+            $targetUser = User::where('name', '=', $request->name, 'and')->first();
+            if ($targetUser) $query->where('dados_antigos->user_id', $targetUser->id);
+        }
+
+        if ($request->filled('month')) {
+            $mesComTraco = $request->month;
+            $mesComBarra = str_replace('-', '/', $request->month);
+            $query->where(function ($q) use ($mesComTraco, $mesComBarra) {
+                $q->where('dados_antigos->data', 'like', $mesComTraco . '%')
+                  ->orWhere('dados_antigos->data', 'like', $mesComBarra . '%');
+            });
+        }
+
+        $admin_logs = $query->orderBy('created_at', 'desc')->paginate(10);
+        return view('admin/admin_logs', compact('admin_logs', 'users'));
+    }
+    
     public function createlogview(Request $request)
     {
         if (Auth::user()->tipo === 'admin' && $request->query('mode') !== 'user') {
-            $users = User::all();
-            return view("admin/createlogview", compact('users'));
+            return view("admin/createlogview", ['users' => User::all()]);
         }
-
         return view("user/createlogview");
     }
 
     public function createlog(Request $request)
     {
-        $isFromAdminForm = $request->has('user_id');
+        $isAdmin       = Auth::user()->tipo === 'admin';
+        $isFromAdmin   = $request->has('user_id');
 
         $rules = [
             'data'    => ['required', 'date'],
@@ -193,15 +159,12 @@ class logscontroller extends Controller
             'saida'   => ['required'],
             'obs'     => ['required', 'string'],
         ];
-
-        if ($isFromAdminForm) {
-            $rules['user_id'] = ['required', 'exists:users,id'];
-        }
+        if ($isFromAdmin) $rules['user_id'] = ['required', 'exists:users,id'];
 
         $request->validate($rules);
 
-        $userId = $isFromAdminForm ? $request->user_id : Auth::id();
-        $user = User::findOrFail($userId);
+        $userId = $isFromAdmin ? $request->user_id : Auth::id();
+        $user   = User::findOrFail($userId);
 
         $logExists = Logs::where('user_id', '=', $userId, 'and')
             ->where('data', $request->data)
@@ -209,751 +172,138 @@ class logscontroller extends Controller
             ->exists();
 
         if ($logExists) {
-            return redirect()->back()
-                ->withInput()
+            return redirect()->back()->withInput()
                 ->with('message', 'A log record or pending request already exists for this day.');
         }
 
-        $entry = Carbon::parse($request->entrada);
-        $exit = Carbon::parse($request->saida);
-
-        $inicio_almoco = Carbon::parse($user->inicio_almoco);
-        $fim_almoco = $inicio_almoco->copy()->addHour();
-        $endlunch = $fim_almoco->format('H:i');
-
-        $totalMinutos = $entry->diffInMinutes($exit);
-
-        if ($entry->lessThan($fim_almoco) && $exit->greaterThan($inicio_almoco)) {
-            $inicio_sobreposicao = $entry->greaterThan($inicio_almoco) ? $entry : $inicio_almoco;
-            $fim_sobreposicao = $exit->lessThan($fim_almoco) ? $exit : $fim_almoco;
-            $minutosDesconto = $inicio_sobreposicao->diffInMinutes($fim_sobreposicao);
-            $totalMinutos -= $minutosDesconto;
-        }
-
-        $totalMinutos = max(0, $totalMinutos);
-
-        $horas = floor($totalMinutos / 60);
-        $minutos = $totalMinutos % 60;
-        $total = sprintf('%02d:%02d', $horas, $minutos);
-
-        // GARANTE: Se for o admin a submeter, entra aprovado. Se for user comum, entra 'pending'.
-        $status = (Auth::user()->tipo === 'admin') ? 'approved' : 'pending';
+        $endlunch = Carbon::parse($user->inicio_almoco)->addHour();
+        $total    = $this->calcTotal($request->entrada, $request->saida, $user->inicio_almoco);
 
         $log = Logs::create([
             'user_id'      => $userId,
             'data'         => $request->data,
             'entrada'      => $request->entrada,
-            'final_almoço' => $endlunch,
+            'final_almoço' => $endlunch->format('H:i'),
             'saida'        => $request->saida,
             'total_horas'  => $total,
             'obs'          => $request->obs,
             'created_by'   => Auth::user()->name,
-            'updated_by'   => "Not Updated",
-            'status'       => $status,
+            'updated_by'   => 'Not Updated',
+            'status'       => $isAdmin ? 'approved' : 'pending',
         ]);
 
-        if (Auth::user()->tipo === 'user') {
+        if (!$isAdmin) {
             Mail::to($user->email)->send(new \App\Mail\UserLogConfirmationMail($log));
 
-            // APONTA PARA AS NOVAS ROTAS (Com expiração de 1 hora)
             $approveUrl = URL::temporarySignedRoute('admin.approve_new_log', now()->addHour(), ['id' => $log->id]);
-            $rejectUrl = URL::temporarySignedRoute('admin.reject_new_log', now()->addHour(), ['id' => $log->id]);
+            $rejectUrl  = URL::temporarySignedRoute('admin.reject_new_log',  now()->addHour(), ['id' => $log->id]);
 
-            $admins = User::where('tipo', '=', 'admin', 'and')->get();
-            foreach ($admins as $admin) {
+            foreach (User::where('tipo','=', 'admin','and')->get() as $admin) {
                 Mail::to($admin->email)->send(new \App\Mail\NewLogRequestMail($log, $user, $approveUrl, $rejectUrl));
             }
         }
 
-        if (!$isFromAdminForm) {
-            return redirect()->route('userlogs')->with('success', Auth::user()->tipo === 'admin' ? 'Log criado com sucesso!' : 'O teu pedido foi enviado para aprovação!');
+        if (!$isFromAdmin) {
+            return redirect()->route('userlogs')->with('success', $isAdmin
+                ? 'Log criado com sucesso!'
+                : 'O teu pedido foi enviado para aprovação!');
         }
 
-        return redirect()->route('adminlogs')->with('success', 'Log criado e aprovado com sucesso!');
+        return redirect()->route('adminlogs')->with('success', 'Log created successfully!');
     }
-    public function approveNewLog(Request $request, $id)
+
+   public function looklog($logs)
     {
-        if (!Auth::check()) {
-            session(['url.intended' => URL::full()]);
-            return redirect()->route('login');
-        }
+        $logs = Logs::findOrFail($logs);
+        $this->authorizeLogAccess($logs);
 
-        if (Auth::user()->tipo !== 'admin') {
-            return redirect()->route('userlogs')->with('error', 'Dont have permission.');
-        }
-
-        $log = Logs::findOrFail($id);
-
-        // If link signature is invalid/expired, show action page with current status
-        if (method_exists($request, 'hasValidSignature') && !$request->hasValidSignature()) {
-            $processor = AdminLog::where('log_id','=', $log->id,'and')
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $message = 'This link is invalid or has expired.';
-            $success = ($log->status === 'approved');
-            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
-
-            return view('admin.action_result', [
-                'success' => $success,
-                'message' => $message,
-                'details' => [
-                    'status' => $log->status,
-                    'processed_by' => $who,
-                    'processed_at' => $processor?->created_at?->toDateTimeString(),
-                ],
-            ]);
-        }
-
-        // If already processed, show action page with details
-        if ($log->status !== 'pending') {
-            $processor = AdminLog::where('log_id','=', $log->id,'and')
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $message = 'This new log request has already been processed.';
-            $success = ($log->status === 'approved');
-            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
-
-            return view('admin.action_result', [
-                'success' => $success,
-                'message' => $message,
-                'details' => [
-                    'status' => $log->status,
-                    'processed_by' => $who,
-                    'processed_at' => $processor?->created_at?->toDateTimeString(),
-                ],
-            ]);
-        }
-
-        $dadosAntigos = $log->getAttributes();
-        $log->withoutEvents(function () use ($log) {
-            $log->status = 'approved';
-            $log->save();
-        });
-        \App\Models\AdminLog::create([
-            'log_id'        => $log->id,
-            'user_id'       => $log->user_id,
-            'admin_id'      => Auth::id(),
-            'acao'          => 'CREATION_ACCEPTED',
-            'dados_antigos' => $dadosAntigos,
-            'dados_novos'   => ['status' => 'approved']
-        ]);
-        $log->load('user');
-        Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'approved'));
-
-        $processor = AdminLog::where('log_id','=', $log->id,'and')
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        return view('admin.action_result', [
-            'success' => true,
-            'message' => 'New log request approved successfully.',
-            'details' => [
-                'status' => 'approved',
-                'processed_by' => $processor?->decisor?->name ?? Auth::user()->name,
-                'processed_at' => $processor?->created_at?->toDateTimeString(),
-            ],
-        ]);
+        return request()->is('admin/*')
+            ? view("admin/looklog", compact('logs'))
+            : view("user/looklog",  compact('logs'));
     }
-    public function rejectNewLog(Request $request, $id)
-    {
-        if (!Auth::check()) {
-            session(['url.intended' => URL::full()]);
-            return redirect()->route('login');
-        }
 
-        if (Auth::user()->tipo !== 'admin') {
-            return redirect()->route('userlogs')->with('error', 'Dont have permission.');
-        }
-        $log = Logs::findOrFail($id);
-
-        // If link signature is invalid/expired, show action page with current status
-        if (method_exists($request, 'hasValidSignature') && !$request->hasValidSignature()) {
-            $processor = AdminLog::where('log_id','=', $log->id,'and')
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $message = 'This link is invalid or has expired.';
-            $success = ($log->status === 'approved');
-            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
-
-            return view('admin.action_result', [
-                'success' => $success,
-                'message' => $message,
-                'details' => [
-                    'status' => $log->status,
-                    'processed_by' => $who,
-                    'processed_at' => $processor?->created_at?->toDateTimeString(),
-                ],
-            ]);
-        }
-
-        // If already processed, show action page with details
-        if ($log->status !== 'pending') {
-            $processor = AdminLog::where('log_id','=', $log->id,'and')
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $message = 'This new log request has already been processed.';
-            $success = ($log->status === 'approved');
-            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
-
-            return view('admin.action_result', [
-                'success' => $success,
-                'message' => $message,
-                'details' => [
-                    'status' => $log->status,
-                    'processed_by' => $who,
-                    'processed_at' => $processor?->created_at?->toDateTimeString(),
-                ],
-            ]);
-        }
-
-        $dadosAntigos = $log->getAttributes();
-        $log->withoutEvents(function () use ($log) {
-            $log->status = 'rejected';
-            $log->save();
-        });
-         \App\Models\AdminLog::create([
-            'log_id'        => $log->id,
-            'user_id'       => $log->user_id,
-            'admin_id'      => Auth::id(),
-            'acao'          => 'CREATION_REJECTED',
-            'dados_antigos' => $dadosAntigos,
-            'dados_novos'   => ['status' => 'rejected']
-        ]);
-        $log->load('user');
-        Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'rejected'));
-
-        $processor = AdminLog::where('log_id','=', $log->id,'and')
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        return view('admin.action_result', [
-            'success' => false,
-            'message' => 'New log request rejected.',
-            'details' => [
-                'status' => 'rejected',
-                'processed_by' => $processor?->decisor?->name ?? Auth::user()->name,
-                'processed_at' => $processor?->created_at?->toDateTimeString(),
-            ],
-        ]);
-    }
-    public function looklog($logs)
-    {
-        $logs = \App\Models\Logs::findOrFail($logs);
-        if ($logs->user_id !== Auth::user()->id && Auth::user()->tipo !== 'admin') {
-            return redirect()->back()->with('error', 'Unauthorized access');
-        }
-        if (request()->is('admin/*')) {
-            return view("admin/looklog", ["logs" => $logs]);
-        } else {
-            return view("user/looklog", ["logs" => $logs]);
-        }
-    }
     public function editlog($logs)
     {
-        $logs = logs::findOrFail($logs);
-        if ($logs->user_id !== Auth::user()->id && Auth::user()->tipo !== 'admin') {
-            return redirect()->back()->with('error', 'Unauthorized access');
-        }
+        $logs  = Logs::findOrFail($logs);
+        $this->authorizeLogAccess($logs);
         $users = User::all();
-        if (request()->is('admin/*')) {
-            return view("admin/editlog", ["logs" => $logs, "users" => $users]);
-        } else {
-            return view("user/editlog", ["logs" => $logs, "users" => $users]);
-        }
+
+        return request()->is('admin/*')
+            ? view("admin/editlog", compact('logs', 'users'))
+            : view("user/editlog",  compact('logs', 'users'));
     }
-    public function updatelog(logs $logs, Request $request)
+
+    public function updatelog(Logs $logs, Request $request)
     {
-        if ($logs->user_id !== Auth::user()->id && Auth::user()->tipo !== 'admin') {
-            return redirect()->back()->with('error', 'Unauthorized access');
-        }
+        $this->authorizeLogAccess($logs);
+
         $data = $request->validate([
-            'data' => ['required'],
-            'obs' => ['required'],
-            'saida' => ['required'],
+            'data'    => ['required'],
+            'obs'     => ['required'],
+            'saida'   => ['required'],
             'entrada' => ['required'],
         ]);
-        $id = $request->user_id;
-        $user = User::findOrFail($id);
-        $logss = logs::with('User')->where("user_id", $id)->get();
-        $datevalid = 0;
 
-        foreach ($logss as $log) {
-            if ($log->data == $data["data"]) {
-                $datevalid = $datevalid + 1;
-            }
+        $user  = User::findOrFail($request->user_id);
+        $taken = Logs::with('User')
+            ->where('user_id', $user->id)
+            ->where('data', $data['data'])
+            ->where('id', '!=', $logs->id)
+            ->exists();
+
+        if ($taken) {
+            return redirect()->back()->withInput()->with('message', 'A log already exists for that date.');
         }
-        if ($logs->data == $data["data"]) {
-            $datevalid = 0;
+
+        $endlunch = Carbon::parse($user->inicio_almoco)->addHour()->format('H:i');
+        $total    = $data['saida'] !== '00:00'
+            ? $this->calcTotal($data['entrada'], $data['saida'], $user->inicio_almoco)
+            : '00:00:00';
+
+        $dadosPreparados = array_merge($data, [
+            'total_horas'  => $total,
+            'final_almoço' => $endlunch,
+            'updated_by'   => Auth::user()->name,
+        ]);
+
+        if (Auth::user()->tipo === 'admin') {
+            $logs->acao_personalizada = 'EDIT';
+            $logs->update($dadosPreparados);
+            return redirect()->route('adminlogs')->with('message', 'Log updated successfully!');
         }
-        if ($datevalid == 0) {
-            $entry = Carbon::parse($data["entrada"]);
-            $exit = Carbon::parse($data["saida"]);
-            $inicio_almoco = Carbon::parse($user->inicio_almoco);
-            $fim_almoco = $inicio_almoco->copy()->addHour();
-            $endlunch = $fim_almoco->format('H:i');
-            $adm = Auth::user()->name;
-            if ($exit->format("H:i") != "00:00") {
-                $totalMinutos = $entry->diffInMinutes($exit);
-                if ($entry->lessThan($fim_almoco) && $exit->greaterThan($inicio_almoco)) {
-                    $inicio_sobreposicao = $entry->greaterThan($inicio_almoco) ? $entry : $inicio_almoco;
-                    $fim_sobreposicao = $exit->lessThan($fim_almoco) ? $exit : $fim_almoco;
-                    $minutosDesconto = $inicio_sobreposicao->diffInMinutes($fim_sobreposicao);
-                    $totalMinutos -= $minutosDesconto;
-                }
-                if ($totalMinutos < 0) {
-                    $totalMinutos = 0;
-                }
-                $horas = floor($totalMinutos / 60);
-                $minutos = $totalMinutos % 60;
-                $total = sprintf('%02d:%02d', $horas, $minutos);
-            } else {
-                $total = "00:00:00";
-            }
-            $dadosPreparados = $data + [
-                'total_horas' => $total,
-                'final_almoço' => $endlunch,
-                'updated_by' => $adm,
-            ];
-            if (Auth::user()->tipo === 'admin') {
-                $logs->acao_personalizada = 'EDIT';
-                $logs->update($dadosPreparados);
-                return redirect()->route('adminlogs')->with("message", "Log updated successfully!");
-            } else {
-                $approval = LogApproval::create([
-                    'log_id' => $logs->id,
-                    'user_id' => Auth::user()->id,
-                    'dados_novos' => $dadosPreparados,
-                    'status' => 'pending'
-                ]);
-                $admins = User::query()->where('tipo', 'admin')->get();
-                foreach ($admins as $admin) {
-                    \Illuminate\Support\Facades\Mail::to($admin->email)
-                        ->send(new \App\Mail\LogEditRequestMail(Auth::user(), $logs, $dadosPreparados, $approval->id));
-                }
-                return redirect()->route('userlogs')->with('success', 'Your log modification request has been successfully submitted for approval.');
-            }
+
+        $approval = LogApproval::create([
+            'log_id'      => $logs->id,
+            'user_id'     => Auth::user()->id,
+            'dados_novos' => $dadosPreparados,
+            'status'      => 'pending',
+        ]);
+
+        foreach (User::where('tipo','=', 'admin','and')->get() as $admin) {
+            Mail::to($admin->email)->send(
+                new \App\Mail\LogEditRequestMail(Auth::user(), $logs, $dadosPreparados, $approval->id)
+            );
         }
+
+        return redirect()->route('userlogs')
+            ->with('success', 'Your log modification request has been successfully submitted for approval.');
     }
-    public function adminLogsAudit(Request $request)
-    {
-        $users = User::all();
-        $query = AdminLog::with(['autor', 'decisor']);
-        if ($request->filled('name')) {
-            $targetUser = User::where('name', '=', $request->name, 'and')->first();
 
-            if ($targetUser) {
-
-                $query->where('dados_antigos->user_id', $targetUser->id);
-            }
-        }
-        if ($request->filled('month')) {
-            $mesComTraco = $request->month;
-            $mesComBarra = str_replace('-', '/', $request->month);
-
-            $query->where(function ($q) use ($mesComTraco, $mesComBarra) {
-                $q->where('dados_antigos->data', 'like', $mesComTraco . '%')
-                    ->orWhere('dados_antigos->data', 'like', $mesComBarra . '%');
-            });
-        }
-        $admin_logs = $query->orderBy('created_at', 'desc')->paginate(10);
-        return view('admin/admin_logs', compact('admin_logs', 'users'));
-    }
     public function deletelog($logs)
     {
-        $logs = logs::findOrFail($logs);
-        if ($logs->user_id !== Auth::user()->id && Auth::user()->tipo !== 'admin') {
-            return redirect()->back()->with('error', 'Unauthorized access');
-        }
+        $logs = Logs::findOrFail($logs);
+        $this->authorizeLogAccess($logs);
         $logs->delete();
-        if (request()->is('admin/*')) {
-            return redirect()->route("adminlogs")->with("message", "The log has been sucessfully removed");
-        } else {
-            return redirect()->route("userlogs")->with("message", "The log has been sucessfully removed");
-        }
+
+        return request()->is('admin/*')
+            ? redirect()->route('adminlogs')->with('message', 'The log has been successfully removed')
+            : redirect()->route('userlogs')->with('message', 'The log has been successfully removed');
     }
-    public function export(Request $request)
+
+    private function authorizeLogAccess(Logs $log): void
     {
-        $logs = Logs::with('User');
-
-        if ($request->name != "") {
-            $logs->whereHas('user', function ($query) use ($request) {
-                $query->where('name', $request->name);
-            });
-        }
-        if ($request->month != "") {
-            $logs->where('data', 'like', $request->month . '%');
-        }
-        if ($request->time != "") {
-            $logs->whereDay('data', $request->time);
-        }
-        $logs = $logs->orderBy('data', 'DESC')->get();
-        $format = $request->format;
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setCellValue('A1', 'User');
-        $sheet->setCellValue('B1', 'Date');
-        $sheet->setCellValue('C1', 'Entry');
-        $sheet->setCellValue('D1', 'Exit');
-        $sheet->setCellValue('E1', 'Total Hours');
-        $sheet->setCellValue('F1', 'Obs');
-        $row = 2;
-        foreach ($logs as $log) {
-            $sheet->setCellValue('A' . $row, $log->user->name);
-            $sheet->setCellValue('B' . $row, $log->data);
-            $sheet->setCellValue('C' . $row, $log->entrada);
-            $sheet->setCellValue('D' . $row, $log->saida);
-            $sheet->setCellValue('E' . $row, $log->total_horas);
-            $sheet->setCellValue('F' . $row, $log->obs);
-            $row++;
-        }
-        if ($format == 'xlsx') {
-            $writer = new Xlsx($spreadsheet);
-
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="logs.xlsx"');
-            header('Cache-Control: max-age=0');
-        }
-        if ($format == 'csv') {
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Csv($spreadsheet);
-            $writer->setDelimiter(';');
-            $writer->setEnclosure('"');
-            $writer->setLineEnding("\r\n");
-            header('Content-Type: text/csv; charset=UTF-8');
-            header('Content-Disposition: attachment; filename="logs.csv"');
-            header('Cache-Control: max-age=0');
-        }
-        $writer->save('php://output');
-        exit;
-    }
-    public function exportuserlog(Request $request)
-    {
-        $id = Auth::user()->id;
-        $logs = Logs::with('User')->where('user_id', $id);
-
-        if ($request->name != "") {
-            $logs->whereHas('user', function ($query) use ($request) {
-                $query->where('name', $request->name);
-            });
-        }
-        if ($request->month != "") {
-            $logs->where('data', 'like', $request->month . '%');
-        }
-        if ($request->time != "") {
-            $logs->whereDay('data', $request->time);
-        }
-        $logs = $logs->orderBy('data', 'DESC')->get();
-        $format = $request->format;
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setCellValue('A1', 'User');
-        $sheet->setCellValue('B1', 'Date');
-        $sheet->setCellValue('C1', 'Entry');
-        $sheet->setCellValue('D1', 'Exit');
-        $sheet->setCellValue('E1', 'Total Hours');
-        $sheet->setCellValue('F1', 'Obs');
-        $row = 2;
-        foreach ($logs as $log) {
-            $sheet->setCellValue('A' . $row, $log->user->name);
-            $sheet->setCellValue('B' . $row, $log->data);
-            $sheet->setCellValue('C' . $row, $log->entrada);
-            $sheet->setCellValue('D' . $row, $log->saida);
-            $sheet->setCellValue('E' . $row, $log->total_horas);
-            $sheet->setCellValue('F' . $row, $log->obs);
-            $row++;
-        }
-        if ($format == 'xlsx') {
-            $writer = new Xlsx($spreadsheet);
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="Mylogs.xlsx"');
-            header('Cache-Control: max-age=0');
-        }
-        if ($format == 'csv') {
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Csv($spreadsheet);
-            $writer->setDelimiter(';');
-            $writer->setEnclosure('"');
-            $writer->setLineEnding("\r\n");
-            header('Content-Type: text/csv; charset=UTF-8');
-            header('Content-Disposition: attachment; filename="Mylogs.csv"');
-            header('Cache-Control: max-age=0');
-        }
-        $writer->save('php://output');
-        exit;
-    }
-    public function approveLog($id)
-    {
-        if (Auth::user()->tipo !== 'admin') {
-            return redirect()->route('userlogs')->with('error', 'You do not have permission to approve logs.');
-        }
-
-        $approval = LogApproval::findOrFail($id);
-
-        // If already processed, show action page with details
-        if ($approval->status !== 'pending') {
-            $processor = AdminLog::where('log_id','=', $approval->log_id,'and')
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $message = 'This request has already been processed.';
-            $success = ($approval->status === 'approved');
-            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
-
-            return view('admin.action_result', [
-                'success' => $success,
-                'message' => $message,
-                'details' => [
-                    'status' => $approval->status,
-                    'processed_by' => $who,
-                    'processed_at' => $processor?->created_at?->toDateTimeString(),
-                ],
-            ]);
-        }
-
-        // If the approval link expired, reject and show result
-        if ($approval->created_at->copy()->addMinutes(60)->isPast()) {
-            $logOriginal = logs::findOrFail($approval->log_id);
-            $dadosAntigos = $logOriginal->getAttributes();
-            $approval->update([
-                'status' => 'rejected',
-                'admin_id' => Auth::id()
-            ]);
-            \App\Models\AdminLog::create([
-                'log_id'        => $logOriginal->id,
-                'user_id'       => $approval->user_id,
-                'admin_id'      => Auth::id(),
-                'acao'          => 'REJECTED',
-                'dados_antigos' => $dadosAntigos,
-                'dados_novos'   => ['status' => 'rejected']
-            ]);
-            $solicitante = \App\Models\User::findOrFail($approval->user_id);
-            if ($solicitante) {
-                \Illuminate\Support\Facades\Mail::to($solicitante->email)
-                    ->send(new \App\Mail\LogStatusUpdatedMail($solicitante, $logOriginal, 'rejected', []));
-            }
-
-            return view('admin.action_result', [
-                'success' => false,
-                'message' => 'Link expired. The request was rejected.',
-                'details' => [
-                    'status' => 'rejected',
-                    'processed_by' => Auth::user()->name,
-                    'processed_at' => now()->toDateTimeString(),
-                ],
-            ]);
-        }
-
-        $logOriginal = logs::findOrFail($approval->log_id);
-        $dadosAntigos = $logOriginal->getAttributes();
-        $dadosNovosParaGuardar = is_array($approval->dados_novos)
-            ? $approval->dados_novos
-            : json_decode($approval->dados_novos, true);
-
-        $logOriginal->withoutEvents(function () use ($logOriginal, $dadosNovosParaGuardar) {
-            $logOriginal->update($dadosNovosParaGuardar);
-        });
-        $approval->update([
-            'status' => 'approved',
-            'admin_id' => Auth::id()
-        ]);
-        \App\Models\AdminLog::create([
-            'log_id'        => $logOriginal->id,
-            'user_id'       => $approval->user_id,
-            'admin_id'      => Auth::id(),
-            'acao'          => 'APPROVED',
-            'dados_antigos' => $dadosAntigos,
-            'dados_novos'   => $dadosNovosParaGuardar
-        ]);
-        $solicitante = \App\Models\User::findOrFail($approval->user_id);
-        if ($solicitante) {
-            \Illuminate\Support\Facades\Mail::to($solicitante->email)
-                ->send(new \App\Mail\LogStatusUpdatedMail($solicitante, $logOriginal, 'approved', $dadosNovosParaGuardar));
-        }
-        return view('admin.action_result', [
-            'success' => true,
-            'message' => 'New log request approved successfully and user notified!',
-            'details' => [
-                'status' => 'approved',
-                'processed_by' => Auth::user()->name,
-                'processed_at' => now()->toDateTimeString(),
-            ],
-        ]);
-    }
-    public function rejectLog($id)
-    {
-        if (Auth::user()->tipo !== 'admin') {
-            return redirect()->route('userlogs')->with('error', 'You do not have permission to reject logs.');
-        }
-
-        $approval = LogApproval::findOrFail($id);
-
-        // If already processed, show action page with details
-        if ($approval->status !== 'pending') {
-            $processor = AdminLog::where('log_id', '=', $approval->log_id, 'and')
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            $message = 'This request has already been processed.';
-            $success = ($approval->status === 'approved');
-            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
-
-            return view('admin.action_result', [
-                'success' => $success,
-                'message' => $message,
-                'details' => [
-                    'status' => $approval->status,
-                    'processed_by' => $who,
-                    'processed_at' => $processor?->created_at?->toDateTimeString(),
-                ],
-            ]);
-        }
-
-        // Expired: mark rejected and show result
-        if ($approval->created_at->copy()->addMinutes(60)->isPast()) {
-            $logOriginal = logs::findOrFail($approval->log_id);
-            $dadosAntigos = $logOriginal->getAttributes();
-            $approval->update([
-                'status' => 'rejected',
-                'admin_id' => Auth::id()
-            ]);
-            \App\Models\AdminLog::create([
-                'log_id'        => $approval->log_id,
-                'user_id'       => $approval->user_id,
-                'admin_id'      => Auth::id(),
-                'acao'          => 'REJECTED',
-                'dados_antigos' => $dadosAntigos,
-                'dados_novos'   => ['status' => 'rejected']
-            ]);
-            $solicitante = \App\Models\User::findOrFail($approval->user_id);
-            if ($solicitante) {
-                \Illuminate\Support\Facades\Mail::to($solicitante->email)
-                    ->send(new \App\Mail\LogStatusUpdatedMail($solicitante, $logOriginal, 'rejected', []));
-            }
-
-            return view('admin.action_result', [
-                'success' => false,
-                'message' => 'Link expired. The request was rejected and user notified.',
-                'details' => [
-                    'status' => 'rejected',
-                    'processed_by' => Auth::user()->name,
-                    'processed_at' => now()->toDateTimeString(),
-                ],
-            ]);
-        }
-
-        $logOriginal = logs::findOrFail($approval->log_id);
-        $approval->update([
-            'status' => 'rejected',
-            'admin_id' => Auth::id()
-        ]);
-        \App\Models\AdminLog::create([
-            'log_id'        => $approval->log_id,
-            'user_id'       => $approval->user_id,
-            'admin_id'      => Auth::id(),
-            'acao'          => 'REJECTED',
-            'dados_antigos' => $logOriginal->getAttributes(),
-            'dados_novos'   => ['status' => 'rejected']
-        ]);
-        $solicitante = \App\Models\User::findOrFail($approval->user_id);
-        if ($solicitante) {
-            \Illuminate\Support\Facades\Mail::to($solicitante->email)
-                ->send(new \App\Mail\LogStatusUpdatedMail($solicitante, $logOriginal, 'rejected', []));
-        }
-
-        return view('admin.action_result', [
-            'success' => false,
-            'message' => 'New log request rejected and user notified.',
-            'details' => [
-                'status' => 'rejected',
-                'processed_by' => Auth::user()->name,
-                'processed_at' => now()->toDateTimeString(),
-            ],
-        ]);
-    }
-    public function receberPontoDoEsp32(Request $request)
-    {
-        try {
-            $userId = $request->user_id;
-            $user = User::findOrFail($userId);
-
-            $hoje = \Carbon\Carbon::now()->format('Y-m-d');
-            $agora = \Carbon\Carbon::now()->format('H:i');
-
-            $logHoje = \App\Models\Logs::where('user_id', '=', $userId, 'and')
-                ->where('data', $hoje)
-                ->first();
-            if (!$logHoje) {
-                $endlunch = \Carbon\Carbon::parse($user->inicio_almoco)->addHour();
-                \App\Models\Logs::withoutEvents(function () use ($userId, $hoje, $agora, $endlunch) {
-                    \App\Models\Logs::create([
-                        'user_id' => $userId,
-                        'data' => $hoje,
-                        'entrada' => $agora,
-                        'final_almoço' => $endlunch->format('H:i'),
-                        'saida' => "00:00",
-                        'total_horas' => "00:00",
-                        'obs' => "Automatic Log",
-                        'created_by' => "ESP32 System",
-                        'updated_by' => "Not Updated",
-                    ]);
-                });
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Entry registered for ' . $user->name,
-                    'hora' => $agora
-                ]);
-            }
-            if ($logHoje->saida == "00:00" || $logHoje->saida == "00:00:00") {
-                $entry = \Carbon\Carbon::parse($logHoje->entrada);
-                $exit = \Carbon\Carbon::parse($agora);
-                $inicio_almoco = \Carbon\Carbon::parse($user->inicio_almoco);
-                $fim_almoco = $inicio_almoco->copy()->addHour();
-                $totalMinutos = $entry->diffInMinutes($exit);
-                if ($entry->lessThan($fim_almoco) && $exit->greaterThan($inicio_almoco)) {
-                    $inicio_sobreposicao = $entry->greaterThan($inicio_almoco) ? $entry : $inicio_almoco;
-                    $fim_sobreposicao = $exit->lessThan($fim_almoco) ? $exit : $fim_almoco;
-                    $minutosDesconto = $inicio_sobreposicao->diffInMinutes($fim_sobreposicao);
-                    $totalMinutos -= $minutosDesconto;
-                }
-                $totalMinutos = max(0, $totalMinutos);
-                $horas = floor($totalMinutos / 60);
-                $minutos = $totalMinutos % 60;
-                $totalFormatado = sprintf('%02d:%02d', $horas, $minutos);
-                $logHoje->withoutEvents(function () use ($logHoje, $agora, $totalFormatado) {
-                    $logHoje->update([
-                        'saida' => $agora,
-                        'total_horas' => $totalFormatado,
-                        'updated_by' => "ESP32 System",
-                    ]);
-                });
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Saída registada para ' . $user->name,
-                    'total' => $totalFormatado
-                ]);
-            }
-            \App\Models\AdminLog::create([
-                'log_id'        => $logHoje->id,
-                'user_id'       => $userId,
-                'acao'          => 'AFTER HOURS',
-                'dados_antigos' => $logHoje->toArray(),
-                'dados_novos'   => [
-                    'saida' => $agora,
-                    'obs'   => 'After Hours Attempt',
-                    'ip_origem' => $request->ip()
-                ]
-            ]);
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Log for today already has an exit time. After hours attempt recorded and admin notified.',
-            ], 400);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-            ], 500);
+        if ($log->user_id !== Auth::user()->id && Auth::user()->tipo !== 'admin') {
+            abort(403, 'Unauthorized access');
         }
     }
 }

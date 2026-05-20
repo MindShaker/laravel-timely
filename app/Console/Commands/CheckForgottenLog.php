@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\User;
-use App\Models\logs;
+use App\Models\Logs;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\LembretePontoMail;
