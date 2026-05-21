@@ -7,6 +7,8 @@
 
         <title>{{ config('app.name') }}</title>
 
+        <script>document.documentElement.classList.add('dark');</script>
+
         <!-- Fonts -->
         <link rel="icon" type="image/png" href="{{ asset('images/mindshaker-icon.png') }}">
         <link rel="preconnect" href="https://fonts.bunny.net">
