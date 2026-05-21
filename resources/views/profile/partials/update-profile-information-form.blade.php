@@ -62,18 +62,18 @@
                 <x-input-label for="notifications" :value="__('Email Notifications')" />
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Receive email updates.') }}</p>
             </div>
-            <label class="relative inline-flex items-center cursor-pointer">
+            <div class="flex items-center gap-3">
     <input
         type="checkbox"
         id="notifications"
         name="notifications"
         value="1"
-        class="sr-only peer"
+        class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 accent-green-600 cursor-pointer"
         {{ old('notifications', $user->notifications) ? 'checked' : '' }}
     >
-    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-green-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-100 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
-</label>
-        </div>
+    
+</div>
+</div>
  
         <div class="flex items-center gap-4">
             <x-secondary-app-button>{{ __('SAVE') }}</x-secondary-app-button>
