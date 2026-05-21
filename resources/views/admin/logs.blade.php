@@ -10,9 +10,9 @@
                 </a>
             </div>
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm place-items-center">
+            <div class="bg-gray-800 overflow-hidden shadow-sm place-items-center">
 
-                <div class="w-full p-6 text-gray-900 dark:text-gray-100 flex justify-between sm:flex flex-wrap">
+                <div class="w-full p-6 text-gray-100 flex justify-between sm:flex flex-wrap">
 
                     <div>
 
@@ -25,7 +25,7 @@
                                 <div>
                                     <div class="">
                                         <select id="" name ="name"
-                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-yellow-400 dark:focus:border-yellow-400">
+                                            class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-full p-2.5 placeholder-gray-400">
                                             <option value="">ALL USERS</option>
                                             @foreach ($users as $user)
                                                 <option
@@ -41,7 +41,7 @@
                                 <div class ="ml-2">
                                     <input type="number" min="1" max="30" name="time"
                                         placeholder="DAY" value="{{ request('time') }}"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-yellow-500 focus:border-yellow-500 p-2.5 w-24 appearance-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-white dark:text-white dark:focus:ring-yellow-500 dark:focus:border-yellow-500" />
+                                        class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-500 focus:border-yellow-500 p-2.5 w-24 appearance-none placeholder-gray-400" />
                                 </div>
 
 
@@ -70,7 +70,7 @@
 
                         <div>
                             <select id="" name ="format"
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-25 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-yellow-400 dark:focus:border-yellow-400">
+                                class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-25 p-2.5 placeholder-gray-400">
                                 <option value="xlsx">XLSX</option>
                                
 
@@ -88,10 +88,10 @@
 
 
             <div
-                class="w-full relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+                class="w-full relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-transparent">
 
                 <table class="w-full text-sm text-left rtl:text-right text-body">
-                    <thead class="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-default">
+                    <thead class="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-transparent">
                         <tr>
                             <th scope="col" class="px-6 py-3 font-large text-gray-100">
                                 User
@@ -123,7 +123,7 @@
 
                     <tbody>
                         @foreach ($logs as $log)
-                            <tr class="bg-neutral-primary border-b border-default">
+                            <tr class="bg-neutral-primary border-b border-transparent">
                                 <th scope="row"
                                     class="px-6 py-4 font-medium text-heading whitespace-nowrap text-gray-100">
                                     {{ $log->user->name }}
@@ -172,13 +172,13 @@
                                         <div tabindex="0"
                                             class="flex min-h-full items-end justify-center p-4 text-center focus:outline focus:outline-0 sm:items-center sm:p-0">
                                             <el-dialog-panel
-                                                class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-white/10 transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:max-w-lg data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95">
+                                                class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:max-w-lg data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95">
                                                 <div class="bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                                                     <div class="sm:flex sm:items-start">
 
                                                         <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
                                                             <h3 id="dialog-title"
-                                                                class="text-base font-semibold text-white">Delete Log
+                                                                class="text-base font-semibold text-gray-100">Delete Log
                                                             </h3>
                                                             <div class="mt-2">
                                                                 <p class="text-sm text-gray-400">Are you sure you want

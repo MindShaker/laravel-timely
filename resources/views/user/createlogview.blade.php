@@ -19,36 +19,27 @@
                     
 
                     <div>
-                        <label for="date" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Date</label>
+                        <label for="date" class="block mb-2 text-sm font-medium text-gray-100">Date</label>
                         <x-text-input type="date" name="data" id="date" value="{{ old('data', request('data')) }}" required />
                     </div>
 
                     <div>
-                        <label for="entrada" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Entry</label>
+                        <label for="entrada" class="block mb-2 text-sm font-medium text-gray-100">Entry</label>
                         <x-text-input type="time" id="entrada" name="entrada" value="{{ old('entrada', request('entrada')) }}" required />
                     </div>
 
                     <div>
-                        <label for="left" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Left At</label>
+                        <label for="left" class="block mb-2 text-sm font-medium text-gray-100">Left At</label>
                         <x-text-input type="time" id="left" name="saida" value="{{ old('saida', request('saida')) }}" required />
                     </div>
 
                     <div>
-                        <label for="obs" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Obs</label>
+                        <label for="obs" class="block mb-2 text-sm font-medium text-gray-100">Obs</label>
                         <x-text-input id="obs" type="text" name="obs" value="{{ old('obs', request('obs')) }}" class="w-full" required />
                     </div>
                 </div>
 
-                <div class="flex items-start mb-6">
-                    <div class="flex items-center h-5">
-                        <input id="remember" type="checkbox" value=""
-                            class="w-4 h-4 border border-gray-300 rounded-sm bg-gray-50 focus:ring-3 focus:ring-yellow-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-yellow-600 dark:ring-offset-gray-800"
-                            required />
-                    </div>
-                    <label for="remember" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                        I agree with the <a href="#" class="text-yellow-300 hover:underline dark:text-yellow-300">terms and conditions</a>.
-                    </label>
-                </div>
+                
 
                 <x-primary-app-button type="submit" style="cursor: pointer">SUBMIT</x-primary-app-button>
             </form>

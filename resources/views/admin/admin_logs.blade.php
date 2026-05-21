@@ -3,8 +3,8 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="flex flex-row-reverse h-10"></div>
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm place-items-center">
-                <div class="w-full p-6 text-gray-900 dark:text-gray-100 flex justify-between sm:flex flex-wrap">
+            <div class="bg-gray-800 overflow-hidden shadow-sm place-items-center">
+                <div class="w-full p-6 text-gray-100 flex justify-between sm:flex flex-wrap">
 
                     <div>
                         <form action="{{ route('admin.adminlogs') }}" method="get">
@@ -12,7 +12,7 @@
                             <div class="flex justify-between sm:flex flex-wrap">
                                 <div>
                                     <select name="name"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-yellow-400 dark:focus:border-yellow-400">
+                                        class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-full p-2.5 placeholder-gray-400">
                                         <option value="">SEARCH BY LOG OWNER</option>
                                         @foreach ($users as $user)
                                             <option value="{{ $user->name }}"
@@ -43,9 +43,9 @@
                 </div>
 
                 <div
-                    class="w-full relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+                    class="w-full relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-transparent">
                     <table class="w-full text-sm text-left rtl:text-right text-body">
-                        <thead class="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-default">
+                        <thead class="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-transparent">
                             <tr>
                                 <th scope="col" class="px-6 py-3 font-large text-gray-100">Author</th>
                                 <th scope="col" class="px-6 py-3 font-large text-gray-100">Log Owner</th>
@@ -58,7 +58,7 @@
 
                         <tbody>
                             @foreach ($admin_logs as $log)
-                                <tr class="bg-neutral-primary border-b border-default">
+                                <tr class="bg-neutral-primary border-b border-transparent">
                                     <th scope="row"
                                         class="px-6 py-4 font-medium whitespace-nowrap {{ $log->autor->tipo == 'admin' ? 'text-yellow-400' : 'text-gray-100' }}">
                                         {{ $log->autor->name ?? 'System' }}
@@ -116,13 +116,13 @@
                                                 <div tabindex="0"
                                                     class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                                                     <el-dialog-panel
-                                                        class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-white/10 transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                                                        class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all sm:my-8 sm:w-full sm:max-w-lg">
                                                         <div class="bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                                                             <div class="sm:flex sm:items-start">
                                                                 <div
                                                                     class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
                                                                     <h3 id="dialog-title-old-{{ $log->id }}"
-                                                                        class="text-lg font-semibold text-white mb-4 border-b border-gray-600 pb-2">
+                                                                        class="text-lg font-semibold text-gray-100 mb-4 border-b border-gray-600 pb-2">
                                                                         Original Data
                                                                     </h3>
 
@@ -204,13 +204,12 @@
                                         </el-dialog>
                                     </td>
 
-                                    <td class="text-gray-100 px-10 py-4">
-                                        @if ($log->dados_novos)
-                                            <button type="button"
-                                                onclick="document.getElementById('dialog-new-{{ $log->id }}').showModal()"
-                                                style="cursor: pointer">
-                                                <x-eye-icon />
-                                            </button>
+                                            <td class="px-6 py-4 text-gray-100">
+                                                <button type="button"
+                                                    onclick="document.getElementById('dialog-new-{{ $log->id }}').showModal()"
+                                                    style="cursor: pointer">
+                                                    <x-eye-icon />
+                                                </button>
 
                                             <el-dialog>
                                                 <dialog id="dialog-new-{{ $log->id }}"
@@ -222,13 +221,13 @@
                                                     <div tabindex="0"
                                                         class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                                                         <el-dialog-panel
-                                                            class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-white/10 transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                                                            class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all sm:my-8 sm:w-full sm:max-w-lg">
                                                             <div class="bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                                                                 <div class="sm:flex sm:items-start">
                                                                     <div
                                                                         class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
                                                                         <h3 id="dialog-title-new-{{ $log->id }}"
-                                                                            class="text-lg font-semibold text-white mb-4 border-b border-gray-600 pb-2">
+                                                                            class="text-lg font-semibold text-gray-100 mb-4 border-b border-gray-600 pb-2">
                                                                             New Data (Alterations Only)
                                                                         </h3>
 
@@ -404,10 +403,7 @@
                                                     </div>
                                                 </dialog>
                                             </el-dialog>
-                                        @else
-                                            <span class="text-gray-500">-</span>
-                                        @endif
-                                    </td>
+                                            </td>
                                 </tr>
                             @endforeach
                         </tbody>

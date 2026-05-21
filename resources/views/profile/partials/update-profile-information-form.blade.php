@@ -3,7 +3,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;">
-        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+        <h2 class="text-lg font-medium text-white">
             {{ __('Profile Information') }}
         </h2>
  
@@ -74,7 +74,7 @@
                 <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer
                             peer-checked:bg-green-500
                             after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                            after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all
+                            after:bg-gray-100 after:rounded-full after:h-5 after:w-5 after:transition-all
                             peer-checked:after:translate-x-full">
                 </div>
             </label>

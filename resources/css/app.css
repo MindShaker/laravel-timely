@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@variant dark (&:where(.dark, .dark *));
 @import 'flowbite';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -6,3 +7,7 @@
 @source '../**/*.js';
 @source "../node_modules/flowbite-datepicker";
 
+html {
+    color-scheme: dark; /* Força o browser a renderizar tudo (incluindo scrollbars) em modo escuro */
+    background-color: #111827; /* Garante que o fundo não pisca a branco ao carregar (bg-gray-900) */
+}

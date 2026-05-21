@@ -18,9 +18,18 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class ExportController extends Controller
 {
     private const MONTHS_PT = [
-        1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março',    4 => 'Abril',
-        5 => 'Maio',    6 => 'Junho',     7 => 'Julho',     8 => 'Agosto',
-        9 => 'Setembro',10 => 'Outubro',  11 => 'Novembro', 12 => 'Dezembro',
+        1 => 'Janeiro',
+        2 => 'Fevereiro',
+        3 => 'Março',
+        4 => 'Abril',
+        5 => 'Maio',
+        6 => 'Junho',
+        7 => 'Julho',
+        8 => 'Agosto',
+        9 => 'Setembro',
+        10 => 'Outubro',
+        11 => 'Novembro',
+        12 => 'Dezembro',
     ];
 
     private const COMPANY      = 'Empresa: Mindshaker - Serviços Informáticos, Lda.';
@@ -39,7 +48,7 @@ class ExportController extends Controller
         $year     = $hasMonth ? (int) substr($request->month, 0, 4) : now()->year;
 
         if ($hasName && $hasMonth) {
-            $user  = User::where('name','=', $request->name,'and')->firstOrFail();
+            $user  = User::where('name', '=', $request->name, 'and')->firstOrFail();
             $month = (int) substr($request->month, 5, 2);
             $spreadsheet = $this->makeSpreadsheet();
             $sheet = $spreadsheet->createSheet()->setTitle(self::MONTHS_PT[$month]);
@@ -58,12 +67,32 @@ class ExportController extends Controller
         }
 
         if ($hasName && !$hasMonth) {
-            $user        = User::where('name','=', $request->name,'and')->firstOrFail();
+            $user        = User::where('name', '=', $request->name, 'and')->firstOrFail();
             $spreadsheet = $this->makeSpreadsheet();
+            $sheetsAdded = 0; // Contador para garantir que o Excel não fica com 0 folhas
+
             foreach (self::MONTHS_PT as $month => $monthName) {
+                // 1. Procurar os logs primeiro
+                $monthPrefix = sprintf('%d-%02d', $year, $month);
+                $logs = $this->fetchLogs($user->id, $monthPrefix);
+
+                // 2. Se não houver logs neste mês, salta para o próximo sem criar a folha
+                if ($logs->isEmpty()) {
+                    continue;
+                }
+
+                // 3. Se houver logs, cria a folha e popula-a
                 $sheet = $spreadsheet->createSheet()->setTitle($monthName);
-                $this->buildMonthSheet($sheet, $user, $month, $year, $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month)));
+                $this->buildMonthSheet($sheet, $user, $month, $year, $logs);
+                $sheetsAdded++;
             }
+
+            // Salvaguarda: O Excel crasha se tentares gerar um ficheiro com 0 folhas.
+            // Se o utilizador não tiver logs em nenhuns dos meses, criamos uma folha vazia de aviso.
+            if ($sheetsAdded === 0) {
+                $spreadsheet->createSheet()->setTitle('Sem Registos');
+            }
+
             $this->sendXlsx($spreadsheet, "Mindshaker - {$user->name} - {$year}");
         }
 
@@ -85,13 +114,26 @@ class ExportController extends Controller
             $sheet    = $spreadsheet->createSheet()->setTitle(self::MONTHS_PT[$month]);
             $this->buildMonthSheet($sheet, $user, $month, $year, $this->fetchLogs($user->id, $request->month));
             $filename = "Mindshaker - {$user->name} - " . self::MONTHS_PT[$month] . " {$year}";
-        } else {
-            foreach (self::MONTHS_PT as $month => $monthName) {
-                $sheet = $spreadsheet->createSheet()->setTitle($monthName);
-                $this->buildMonthSheet($sheet, $user, $month, $year, $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month)));
-            }
-            $filename = "Mindshaker - {$user->name} - {$year}";
+        }  else {
+    $sheetsAdded = 0;
+    foreach (self::MONTHS_PT as $month => $monthName) {
+        $logs = $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month));
+        
+        if ($logs->isEmpty()) {
+            continue;
         }
+
+        $sheet = $spreadsheet->createSheet()->setTitle($monthName);
+        $this->buildMonthSheet($sheet, $user, $month, $year, $logs);
+        $sheetsAdded++;
+    }
+
+    if ($sheetsAdded === 0) {
+        $spreadsheet->createSheet()->setTitle('Sem Registos');
+    }
+
+    $filename = "Mindshaker - {$user->name} - {$year}";
+}
 
         $this->sendXlsx($spreadsheet, $filename);
     }
@@ -131,8 +173,15 @@ class ExportController extends Controller
         $sheet->getRowDimension(1)->setRowHeight(19.5);
 
         // ── Row 2: column headers ────────────────────────────────────────────
-        $headers = ['A' => 'Data', 'B' => 'Hora de Entrada', 'C' => 'Início Pausa',
-                    'D' => 'Fim Pausa', 'E' => 'Hora de Saída', 'F' => 'Total Horas', 'G' => 'Observações'];
+        $headers = [
+            'A' => 'Data',
+            'B' => 'Hora de Entrada',
+            'C' => 'Início Pausa',
+            'D' => 'Fim Pausa',
+            'E' => 'Hora de Saída',
+            'F' => 'Total Horas',
+            'G' => 'Observações'
+        ];
 
         foreach ($headers as $col => $label) {
             $sheet->setCellValue("{$col}2", $label);
@@ -254,7 +303,7 @@ class ExportController extends Controller
 
     private function fetchLogs(int $userId, string $monthPrefix)
     {
-        return Logs::where('user_id','=', $userId,'and')
+        return Logs::where('user_id', '=', $userId, 'and')
             ->where('status', 'approved')
             ->where('data', 'like', $monthPrefix . '%')
             ->get()->keyBy('data');
@@ -323,8 +372,16 @@ class ExportController extends Controller
         $logs = $query->orderBy('data', 'DESC')->get();
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        foreach (['A' => 'Trabalhador', 'B' => 'Data', 'C' => 'Hora de Entrada',
-                  'D' => 'Hora de Saída', 'E' => 'Total Horas', 'F' => 'Observações'] as $col => $label) {
+        foreach (
+            [
+                'A' => 'Trabalhador',
+                'B' => 'Data',
+                'C' => 'Hora de Entrada',
+                'D' => 'Hora de Saída',
+                'E' => 'Total Horas',
+                'F' => 'Observações'
+            ] as $col => $label
+        ) {
             $sheet->setCellValue("{$col}1", $label);
         }
         $row = 2;
@@ -354,9 +411,16 @@ class ExportController extends Controller
     private function getPortugueseHolidays(int $year): array
     {
         $fixed = [
-            "{$year}-01-01", "{$year}-04-25", "{$year}-05-01", "{$year}-06-10",
-            "{$year}-08-15", "{$year}-10-05", "{$year}-11-01", "{$year}-12-01",
-            "{$year}-12-08", "{$year}-12-25",
+            "{$year}-01-01",
+            "{$year}-04-25",
+            "{$year}-05-01",
+            "{$year}-06-10",
+            "{$year}-08-15",
+            "{$year}-10-05",
+            "{$year}-11-01",
+            "{$year}-12-01",
+            "{$year}-12-08",
+            "{$year}-12-25",
         ];
         $easter        = Carbon::create($year, 3, 21)->addDays(easter_days($year));
         $goodFriday    = $easter->copy()->subDays(2)->format('Y-m-d');

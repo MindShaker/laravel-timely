@@ -1,10 +1,10 @@
-<nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+<nav x-data="{ open: false }" class="bg-gray-800 border-b border-gray-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
                 <!-- Logo -->
-                <div class="shrink-0 flex items-center text-white">
+                <div class="shrink-0 flex items-center text-gray-100">
                     <a href="{{ route('home') }}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-8">
                             <path fill-rule="evenodd"
@@ -35,13 +35,13 @@
             </div>
 
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center lg :ms-6 ">
+                <div class="hidden sm:flex sm:items-center lg :ms-6 ">
                 <div class="flex flex-row">
-                    <div class="flex text-white">
+                    <div class="flex text-gray-100">
                         <a href="{{ route('profile.edit') }}" class="">
                             {{ Auth::user()->name }}</a>
                     </div>
-                    <div class="flex text-white">
+                    <div class="flex text-gray-100">
                         <div>
                             <a href="{{ route('profile.edit') }}" class="">
                             </a>
@@ -58,7 +58,7 @@
             </div>
 
             <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden text-white">
+            <div class="-me-2 flex items-center sm:hidden text-gray-100">
                 <a href="{{ route('profile.edit') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="size-6">

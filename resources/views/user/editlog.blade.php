@@ -16,18 +16,18 @@
 
                     <div>
                         <label for="date"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Date</label>
+                            class="block mb-2 text-sm font-medium text-gray-100">Date</label>
                         <x-text-input type="date" name="data" id="date" value="{{ $logs->data }}"
                             required />
                     </div>
                     <div>
                         <label for="entry"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Entry</label>
+                            class="block mb-2 text-sm font-medium text-gray-100">Entry</label>
                         <x-text-input type="time" id="entry"  value="{{ $logs->entrada }}" name="entrada" required />
                     </div>
 
                     <div>
-                        <label for="left" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Left
+                        <label for="left" class="block mb-2 text-sm font-medium text-gray-100">Left
                             At</label>
                         <x-text-input type="time" id="left"  value="{{ $logs->saida }}" name="saida"
                             required />
@@ -35,27 +35,17 @@
 
                     <div>
                         <label for="obs"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Obs</label>
+                            class="block mb-2 text-sm font-medium text-gray-100">Obs</label>
                         <x-text-input type="text" id="obs" name="obs" value="{{ $logs->obs }}"
                             placeholder="" required />
                     </div>
                 </div>
 
-                <div class="flex items-start mb-6">
-                    <div class="flex items-center h-5">
-                        <input id="remember" type="checkbox" value=""
-                            class="w-4 h-4 border border-gray-300 rounded-sm bg-gray-50 focus:ring-3 focus:ring-yellow-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-yellow-600 dark:ring-offset-gray-800"
-                            required />
-                    </div>
-                    <label for="remember" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">I agree with
-                        the <a href="#" class="text-yellow-300 hover:underline dark:text-yellow-300">terms and
-                            conditions</a>.</label>
-                </div>
                 <div class="invisible">
                     <input type="hidden" value="{{ $logs->user_id }}" name="user_id">
                 </div>
                 <button type="submit" style="cursor: pointer"
-                    class="text-white hover:text-yellow-400 border border-yellow-400 hover:bg-inherit focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium text-sm px-5 py-2 text-center  dark:border-yellow-300 dark:text-white dark:hover:text-yellow-300 dark:hover: ring-yellow-900 dark:focus: bg-yellow-400">SUBMIT</button>
+                    class="text-yellow-100 hover:text-yellow-400 border border-yellow-400 hover:bg-inherit focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium text-sm px-5 py-2 text-center  dark:border-yellow-300 text-yellow-300 hover:text-yellow-100 dark:hover:text-yellow-300 dark:hover:ring-yellow-900 dark:focus:bg-yellow-400">SUBMIT</button>
             </form>
 
 

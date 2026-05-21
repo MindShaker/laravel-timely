@@ -10,8 +10,8 @@
                     <x-primary-app-button>ADD</x-primary-app-button>
                 </a>
             </div>
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm place-items-center">
-                <div class=" w-full p-6 text-gray-900 dark:text-gray-100 flex justify-between sm:flex flex-wrap">
+            <div class="bg-gray-800 overflow-hidden shadow-sm place-items-center">
+                <div class=" w-full p-6 text-gray-100 flex justify-between sm:flex flex-wrap">
                     <div class=" flex justify-between">
                         <div>
                             <form action="/admin/users" method="get">
@@ -37,7 +37,7 @@
 
                             <div>
                                 <select id="" name ="format"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-25 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-yellow-400 dark:focus:border-yellow-400">
+                                    class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-25 p-2.5 placeholder-gray-400">
                                     <option value="xlsx">XLSX</option>
                                     <option value="csv">CSV</option>
 
@@ -53,10 +53,10 @@
 
                 </div>
                 <div
-                    class="w-full relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+                    class="w-full relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-transparent">
 
                     <table class="w-full text-sm text-left rtl:text-right text-body">
-                        <thead class="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-default">
+                        <thead class="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-transparent">
                             <tr>
                                 <th scope="col" class="px-6 py-3 font-large text-gray-100">
                                     Name
@@ -80,7 +80,7 @@
                         </thead>
                         <tbody>
                             @foreach ($users as $user)
-                                <tr class="bg-neutral-primary border-b border-default">
+                                <tr class="bg-neutral-primary border-b border-transparent">
                                     <th class="px-6 py-4 font-medium text-heading whitespace-nowrap text-gray-100">
                                         {{ $user->name }}
                                     </th>
@@ -133,12 +133,12 @@
                                             <div tabindex="0"
                                                 class="flex min-h-full items-end justify-center p-4 text-center focus:outline focus:outline-0 sm:items-center sm:p-0">
                                                 <el-dialog-panel
-                                                    class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-white/10 transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:max-w-lg w-full data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95">
+                                                    class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:max-w-lg w-full data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95">
                                                     <div class="bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                                                         <div class="sm:flex sm:items-start">
                                                             <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                                                                <h3 id="dialog-title"
-                                                                    class="text-base font-semibold text-white">
+                                                                    <h3 id="dialog-title"
+                                                                    class="text-base font-semibold text-gray-100">
                                                                     Manage User: {{ $user->name }}
                                                                 </h3>
                                                                 <div class="mt-2">
@@ -169,7 +169,7 @@
 
                                                         <div class="flex items-center mt-3 sm:mt-0">
                                                             <button type="button" style="cursor: pointer"
-                                                                class="text-yellow-400 hover:text-white border border-yellow-400 hover:bg-yellow-500 focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium text-sm px-5 py-2 text-center me-2 transition-colors"
+                                                                class="text-yellow-400 hover:text-yellow-100 border border-yellow-400 hover:bg-yellow-500 focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium text-sm px-5 py-2 text-center me-2 transition-colors"
                                                                 command="close"
                                                                 commandfor="dialog{{ $user->id }}">Cancel</button>
 
