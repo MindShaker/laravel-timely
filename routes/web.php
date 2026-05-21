@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/createlog',                   [logscontroller::class, 'createlog'])->name('createlog');
+    Route::get('/export/logs',                  [Exportcontroller::class, 'exportuserlog'])->name('exportuserlog');
     
     Route::prefix('user')->group(function () {
         Route::get('/logs',                         [logscontroller::class, 'userlogs'])->name('userlogs');
@@ -62,7 +63,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin-logs',                   [logscontroller::class, 'adminLogsAudit'])->name('admin.adminlogs');
  
         Route::get('/export',                       [Exportcontroller::class, 'export'])->name('export');
-        Route::get('/export/logs',                  [Exportcontroller::class, 'exportuserlog'])->name('exportuserlog');
         Route::get('/export/users',                 [usercontroller::class, 'exportusers'])->name('exportusers');
  
         Route::get('/approve-log/{id}',             [Logapprovalcontroller::class, 'approveLog'])->name('admin.approve_log');

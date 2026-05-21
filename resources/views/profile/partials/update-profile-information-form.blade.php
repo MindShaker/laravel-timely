@@ -63,21 +63,16 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Receive email updates.') }}</p>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                    type="checkbox"
-                    id="notifications"
-                    name="notifications"
-                    value="1"
-                    class="sr-only peer"
-                    {{ old('notifications', $user->notifications) ? 'checked' : '' }}
-                >
-                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer
-                            peer-checked:bg-green-500
-                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                            after:bg-gray-100 after:rounded-full after:h-5 after:w-5 after:transition-all
-                            peer-checked:after:translate-x-full">
-                </div>
-            </label>
+    <input
+        type="checkbox"
+        id="notifications"
+        name="notifications"
+        value="1"
+        class="sr-only peer"
+        {{ old('notifications', $user->notifications) ? 'checked' : '' }}
+    >
+    <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-green-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-100 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+</label>
         </div>
  
         <div class="flex items-center gap-4">
