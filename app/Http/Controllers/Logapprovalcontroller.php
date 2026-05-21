@@ -14,18 +14,14 @@ use Illuminate\Support\Facades\URL;
 
 class LogApprovalController extends Controller
 {
-    
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function actionResultView(bool $success, string $message, string $status, string $by, ?string $at)
     {
         return view('admin.action_result', [
             'success' => $success,
             'message' => $message,
-            'details' => [
-                'status'       => $status,
-                'processed_by' => $by,
-                'processed_at' => $at,
-            ],
+            'details' => ['status' => $status, 'processed_by' => $by, 'processed_at' => $at],
         ]);
     }
 
@@ -40,15 +36,59 @@ class LogApprovalController extends Controller
     {
         $processor = $this->getProcessor($logId);
         $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
-
         return $this->actionResultView(
             $status === 'approved',
             'This request has already been processed.',
-            $status,
-            $who,
+            $status, $who,
             $processor?->created_at?->toDateTimeString()
         );
     }
+
+    /**
+     * Checks if the signed link is expired (signature invalid OR 1h time window passed).
+     */
+    private function isLinkExpired(Request $request, Logs $log): bool
+    {
+        $signatureInvalid = method_exists($request, 'hasValidSignature')
+            && !$request->hasValidSignature();
+
+        $timeExpired = $log->created_at->copy()->addHour()->isPast();
+
+        return $signatureInvalid || $timeExpired;
+    }
+
+    /**
+     * Called when a new-log signed link has expired.
+     * Deletes the pending log and records it as EXPIRED in admin_logs.
+     */
+    private function handleExpiredNewLog(Logs $log): \Illuminate\View\View
+    {
+        // Only act if still pending — another admin may have already expired it
+        if ($log->status === 'pending') {
+            $dadosAntigos = $log->getAttributes();
+
+            AdminLog::create([
+                'log_id'        => $log->id,
+                'user_id'       => $log->user_id,
+                'admin_id'      => null,
+                'acao'          => 'EXPIRED',
+                'dados_antigos' => $dadosAntigos,
+                'dados_novos'   => ['status' => 'expired'],
+            ]);
+
+            $log->withoutEvents(fn() => $log->forceDelete());
+        }
+
+        return $this->actionResultView(
+            false,
+            'This link has expired. The pending log request has been automatically cancelled.',
+            'expired',
+            'System',
+            now()->toDateTimeString()
+        );
+    }
+
+    // ── New Log Requests (signed URL) ─────────────────────────────────────────
 
     public function approveNewLog(Request $request, $id)
     {
@@ -63,16 +103,8 @@ class LogApprovalController extends Controller
 
         $log = Logs::findOrFail($id);
 
-        if (method_exists($request, 'hasValidSignature') && !$request->hasValidSignature()) {
-            $processor = $this->getProcessor($log->id);
-            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
-            return $this->actionResultView(
-                $log->status === 'approved',
-                'This link is invalid or has expired.',
-                $log->status,
-                $who,
-                $processor?->created_at?->toDateTimeString()
-            );
+        if ($this->isLinkExpired($request, $log)) {
+            return $this->handleExpiredNewLog($log);
         }
 
         if ($log->status !== 'pending') {
@@ -95,6 +127,7 @@ class LogApprovalController extends Controller
         if ($log->user->notifications) {
             Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'approved'));
         }
+
         $processor = $this->getProcessor($log->id);
         return $this->actionResultView(
             true,
@@ -118,16 +151,8 @@ class LogApprovalController extends Controller
 
         $log = Logs::findOrFail($id);
 
-        if (method_exists($request, 'hasValidSignature') && !$request->hasValidSignature()) {
-            $processor = $this->getProcessor($log->id);
-            $who = $processor ? ($processor->decisor?->name ?? $processor->admin_id) : 'Unknown';
-            return $this->actionResultView(
-                $log->status === 'approved',
-                'This link is invalid or has expired.',
-                $log->status,
-                $who,
-                $processor?->created_at?->toDateTimeString()
-            );
+        if ($this->isLinkExpired($request, $log)) {
+            return $this->handleExpiredNewLog($log);
         }
 
         if ($log->status !== 'pending') {
@@ -150,6 +175,7 @@ class LogApprovalController extends Controller
         if ($log->user->notifications) {
             Mail::to($log->user->email)->send(new NewLogStatusMail($log, 'rejected'));
         }
+
         $processor = $this->getProcessor($log->id);
         return $this->actionResultView(
             false,
@@ -159,6 +185,9 @@ class LogApprovalController extends Controller
             $processor?->created_at?->toDateTimeString()
         );
     }
+
+    // ── Edit Requests ─────────────────────────────────────────────────────────
+
     public function approveLog($id)
     {
         if (Auth::user()->tipo !== 'admin') {
@@ -172,17 +201,16 @@ class LogApprovalController extends Controller
         }
 
         if ($approval->created_at->copy()->addMinutes(60)->isPast()) {
-            return $this->handleExpiredApproval($approval, 'approved');
+            return $this->handleExpiredApproval($approval);
         }
 
-        $logOriginal    = Logs::findOrFail($approval->log_id);
-        $dadosAntigos   = $logOriginal->getAttributes();
-        $dadosNovos     = is_array($approval->dados_novos)
+        $logOriginal  = Logs::findOrFail($approval->log_id);
+        $dadosAntigos = $logOriginal->getAttributes();
+        $dadosNovos   = is_array($approval->dados_novos)
             ? $approval->dados_novos
             : json_decode($approval->dados_novos, true);
 
         $logOriginal->withoutEvents(fn() => $logOriginal->update($dadosNovos));
-
         $approval->update(['status' => 'approved', 'admin_id' => Auth::id()]);
 
         AdminLog::create([
@@ -196,13 +224,8 @@ class LogApprovalController extends Controller
 
         $this->notifyUser($approval->user_id, $logOriginal, 'approved', $dadosNovos);
 
-        return $this->actionResultView(
-            true,
-            'New log request approved successfully and user notified!',
-            'approved',
-            Auth::user()->name,
-            now()->toDateTimeString()
-        );
+        return $this->actionResultView(true, 'Log edit request approved and user notified!',
+            'approved', Auth::user()->name, now()->toDateTimeString());
     }
 
     public function rejectLog($id)
@@ -218,7 +241,7 @@ class LogApprovalController extends Controller
         }
 
         if ($approval->created_at->copy()->addMinutes(60)->isPast()) {
-            return $this->handleExpiredApproval($approval, 'rejected');
+            return $this->handleExpiredApproval($approval);
         }
 
         $logOriginal = Logs::findOrFail($approval->log_id);
@@ -235,51 +258,46 @@ class LogApprovalController extends Controller
 
         $this->notifyUser($approval->user_id, $logOriginal, 'rejected', []);
 
-        return $this->actionResultView(
-            false,
-            'New log request rejected and user notified.',
-            'rejected',
-            Auth::user()->name,
-            now()->toDateTimeString()
-        );
+        return $this->actionResultView(false, 'Log edit request rejected and user notified.',
+            'rejected', Auth::user()->name, now()->toDateTimeString());
     }
 
-    // ──────────────────────────────────────────────
-    // Private helpers
-    // ──────────────────────────────────────────────
+    // ── Private helpers ───────────────────────────────────────────────────────
 
-    private function handleExpiredApproval(LogApproval $approval, string $calledAction): \Illuminate\View\View
+    /**
+     * Edit request expired — keep original log intact, just mark approval as expired.
+     */
+    private function handleExpiredApproval(LogApproval $approval): \Illuminate\View\View
     {
-        $logOriginal  = Logs::findOrFail($approval->log_id);
-        $dadosAntigos = $logOriginal->getAttributes();
+        if ($approval->status === 'pending') {
+            $logOriginal = Logs::findOrFail($approval->log_id);
 
-        $approval->update(['status' => 'rejected', 'admin_id' => Auth::id()]);
+            $approval->update(['status' => 'expired', 'admin_id' => null]);
 
-        AdminLog::create([
-            'log_id'        => $logOriginal->id,
-            'user_id'       => $approval->user_id,
-            'admin_id'      => Auth::id(),
-            'acao'          => 'REJECTED',
-            'dados_antigos' => $dadosAntigos,
-            'dados_novos'   => ['status' => 'rejected'],
-        ]);
-
-        $this->notifyUser($approval->user_id, $logOriginal, 'rejected', []);
+            AdminLog::create([
+                'log_id'        => $approval->log_id,
+                'user_id'       => $approval->user_id,
+                'admin_id'      => null,
+                'acao'          => 'EXPIRED',
+                'dados_antigos' => $logOriginal?->getAttributes() ?? [],
+                'dados_novos'   => ['status' => 'expired'],
+            ]);
+        }
 
         return $this->actionResultView(
             false,
-            'Link expired. The request was rejected.',
-            'rejected',
-            Auth::user()->name,
+            'This link has expired. The edit request has been automatically cancelled.',
+            'expired',
+            'System',
             now()->toDateTimeString()
         );
     }
 
     private function notifyUser(int $userId, Logs $log, string $status, array $dados): void
-{
-    $user = User::findOrFail($userId);
-    if ($user && $user->notifications) {
-        Mail::to($user->email)->send(new \App\Mail\LogStatusUpdatedMail($user, $log, $status, $dados));
+    {
+        $user = User::findOrFail($userId);
+        if ($user && $user->notifications) {
+            Mail::to($user->email)->send(new \App\Mail\LogStatusUpdatedMail($user, $log, $status, $dados));
+        }
     }
-}
 }
