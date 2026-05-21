@@ -19,7 +19,7 @@
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100 dark:bg-gray-900">
             <div>
                 <a href="/welcome">
-                    <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
+                    <img src="{{ asset('images/timely.png') }}" alt="Mindshaker Logo" class="w-60 sm:w-32 md:w-40 lg:w-60 h-auto max-w-full fill-current text-gray-500 dark:text-gray-400">
                 </a>
             </div>
 
