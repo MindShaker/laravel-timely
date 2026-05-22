@@ -43,15 +43,28 @@ class ExportController extends Controller
     {
         if ($request->format === 'csv') $this->streamCsv($request);
 
+        // Check for incomplete logs unless the user already confirmed
+        if (!$request->boolean('force')) {
+            $incomplete = $this->findIncompleteLogs($request);
+            if (!empty($incomplete)) {
+                return view('admin.export_confirm', [
+                    'incomplete'   => $incomplete,
+                    'isAdmin'      => true,
+                    'exportRoute'  => route('export'),
+                    'params'       => $request->only(['name', 'month', 'time', 'format']),
+                ]);
+            }
+        }
+
         $hasName  = $request->filled('name');
         $hasMonth = $request->filled('month');
         $year     = $hasMonth ? (int) substr($request->month, 0, 4) : now()->year;
 
         if ($hasName && $hasMonth) {
-            $user  = User::where('name', '=', $request->name, 'and')->firstOrFail();
-            $month = (int) substr($request->month, 5, 2);
+            $user        = User::where('name', '=', $request->name, 'and')->firstOrFail();
+            $month       = (int) substr($request->month, 5, 2);
             $spreadsheet = $this->makeSpreadsheet();
-            $sheet = $spreadsheet->createSheet()->setTitle(self::MONTHS_PT[$month]);
+            $sheet       = $spreadsheet->createSheet()->setTitle(self::MONTHS_PT[$month]);
             $this->buildMonthSheet($sheet, $user, $month, $year, $this->fetchLogs($user->id, $request->month));
             $this->sendXlsx($spreadsheet, "Mindshaker - {$user->name} - " . self::MONTHS_PT[$month] . " {$year}");
         }
@@ -69,30 +82,15 @@ class ExportController extends Controller
         if ($hasName && !$hasMonth) {
             $user        = User::where('name', '=', $request->name, 'and')->firstOrFail();
             $spreadsheet = $this->makeSpreadsheet();
-            $sheetsAdded = 0; // Contador para garantir que o Excel não fica com 0 folhas
-
+            $sheetsAdded = 0;
             foreach (self::MONTHS_PT as $month => $monthName) {
-                // 1. Procurar os logs primeiro
-                $monthPrefix = sprintf('%d-%02d', $year, $month);
-                $logs = $this->fetchLogs($user->id, $monthPrefix);
-
-                // 2. Se não houver logs neste mês, salta para o próximo sem criar a folha
-                if ($logs->isEmpty()) {
-                    continue;
-                }
-
-                // 3. Se houver logs, cria a folha e popula-a
+                $logs = $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month));
+                if ($logs->isEmpty()) continue;
                 $sheet = $spreadsheet->createSheet()->setTitle($monthName);
                 $this->buildMonthSheet($sheet, $user, $month, $year, $logs);
                 $sheetsAdded++;
             }
-
-            // Salvaguarda: O Excel crasha se tentares gerar um ficheiro com 0 folhas.
-            // Se o utilizador não tiver logs em nenhuns dos meses, criamos uma folha vazia de aviso.
-            if ($sheetsAdded === 0) {
-                $spreadsheet->createSheet()->setTitle('Sem Registos');
-            }
-
+            if ($sheetsAdded === 0) $spreadsheet->createSheet()->setTitle('Sem Registos');
             $this->sendXlsx($spreadsheet, "Mindshaker - {$user->name} - {$year}");
         }
 
@@ -107,6 +105,19 @@ class ExportController extends Controller
 
         if ($request->format === 'csv') $this->streamCsv($request, $user->id);
 
+        // Check for incomplete logs unless already confirmed
+        if (!$request->boolean('force')) {
+            $incomplete = $this->findIncompleteLogsForUser($user->id, $request);
+            if (!empty($incomplete)) {
+                return view('admin.export_confirm', [
+                    'incomplete'  => [$user->name => $incomplete],
+                    'isAdmin'     => false,
+                    'exportRoute' => route('exportuserlog'),
+                    'params'      => $request->only(['month', 'time', 'format']),
+                ]);
+            }
+        }
+
         $spreadsheet = $this->makeSpreadsheet();
 
         if ($hasMonth) {
@@ -114,28 +125,67 @@ class ExportController extends Controller
             $sheet    = $spreadsheet->createSheet()->setTitle(self::MONTHS_PT[$month]);
             $this->buildMonthSheet($sheet, $user, $month, $year, $this->fetchLogs($user->id, $request->month));
             $filename = "Mindshaker - {$user->name} - " . self::MONTHS_PT[$month] . " {$year}";
-        }  else {
-    $sheetsAdded = 0;
-    foreach (self::MONTHS_PT as $month => $monthName) {
-        $logs = $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month));
-        
-        if ($logs->isEmpty()) {
-            continue;
+        } else {
+            $sheetsAdded = 0;
+            foreach (self::MONTHS_PT as $month => $monthName) {
+                $logs = $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month));
+                if ($logs->isEmpty()) continue;
+                $sheet = $spreadsheet->createSheet()->setTitle($monthName);
+                $this->buildMonthSheet($sheet, $user, $month, $year, $logs);
+                $sheetsAdded++;
+            }
+            if ($sheetsAdded === 0) $spreadsheet->createSheet()->setTitle('Sem Registos');
+            $filename = "Mindshaker - {$user->name} - {$year}";
         }
 
-        $sheet = $spreadsheet->createSheet()->setTitle($monthName);
-        $this->buildMonthSheet($sheet, $user, $month, $year, $logs);
-        $sheetsAdded++;
-    }
-
-    if ($sheetsAdded === 0) {
-        $spreadsheet->createSheet()->setTitle('Sem Registos');
-    }
-
-    $filename = "Mindshaker - {$user->name} - {$year}";
-}
-
         $this->sendXlsx($spreadsheet, $filename);
+    }
+
+    // ── Incomplete log detection ──────────────────────────────────────────────
+
+    /**
+     * Returns ['Person Name' => ['2025-05-01', '2025-05-03', ...], ...]
+     * Only for logs matching the current export filters.
+     */
+    private function findIncompleteLogs(Request $request): array
+    {
+        $query = Logs::with('user')
+            ->where('status', 'approved')
+            ->where(fn($q) => $q->whereNull('saida')
+                ->orWhere('saida', '00:00')
+                ->orWhere('saida', '00:00:00'));
+
+        if ($request->filled('name')) {
+            $query->whereHas('user', fn($q) => $q->where('name', $request->name));
+        }
+        if ($request->filled('month')) {
+            $query->where('data', 'like', $request->month . '%');
+        }
+
+        $incomplete = [];
+        foreach ($query->orderBy('data')->get() as $log) {
+            $incomplete[$log->user->name][] = $log->data;
+        }
+        return $incomplete;
+    }
+
+    /**
+     * Same but scoped to a single user (for exportuserlog).
+     * Returns a flat array of date strings.
+     */
+    private function findIncompleteLogsForUser(int $userId, Request $request): array
+    {
+        $query = Logs::where('user_id', '=', $userId, 'and')
+            ->where('status', 'approved')
+            ->where(fn($q) => $q->whereNull('saida')
+                ->orWhere('saida', '00:00')
+                ->orWhere('saida', '00:00:00'));
+
+        if ($request->filled('month')) {
+            $query->where('data', 'like', $request->month . '%');
+        }
+
+        return $query->orderBy('data')->pluck('data')->toArray();
     }
 
     // ── Core sheet builder ────────────────────────────────────────────────────
@@ -151,8 +201,7 @@ class ExportController extends Controller
         $totalRow     = $daysInMonth + 3;
         $avgRow       = $daysInMonth + 4;
 
-        // ── Row 1: header ───────────────────────────────────────────────────
-        // Trabalhador: [name]   Mês: [month]   Ano: [year]   Empresa: ...
+        // ── Row 1: header ─────────────────────────────────────────────────────
         $headerData = [
             'A1' => ['Trabalhador:', true,  Alignment::HORIZONTAL_LEFT],
             'B1' => [$user->name,    false, Alignment::HORIZONTAL_LEFT],
@@ -162,7 +211,6 @@ class ExportController extends Controller
             'F1' => [$year,          false, Alignment::HORIZONTAL_LEFT],
             'G1' => [self::COMPANY,  false, Alignment::HORIZONTAL_LEFT],
         ];
-
         foreach ($headerData as $cell => [$value, $bold, $align]) {
             $sheet->setCellValue($cell, $value);
             $sheet->getStyle($cell)->applyFromArray([
@@ -172,7 +220,7 @@ class ExportController extends Controller
         }
         $sheet->getRowDimension(1)->setRowHeight(19.5);
 
-        // ── Row 2: column headers ────────────────────────────────────────────
+        // ── Row 2: column headers ─────────────────────────────────────────────
         $headers = [
             'A' => 'Data',
             'B' => 'Hora de Entrada',
@@ -180,9 +228,8 @@ class ExportController extends Controller
             'D' => 'Fim Pausa',
             'E' => 'Hora de Saída',
             'F' => 'Total Horas',
-            'G' => 'Observações'
+            'G' => 'Observações',
         ];
-
         foreach ($headers as $col => $label) {
             $sheet->setCellValue("{$col}2", $label);
             $sheet->getStyle("{$col}2")->applyFromArray([
@@ -194,7 +241,7 @@ class ExportController extends Controller
         }
         $sheet->getRowDimension(2)->setRowHeight(19.5);
 
-        // ── Data rows ────────────────────────────────────────────────────────
+        // ── Data rows ─────────────────────────────────────────────────────────
         for ($day = 1; $day <= $daysInMonth; $day++) {
             $date      = Carbon::create($year, $month, $day);
             $dateStr   = $date->format('Y-m-d');
@@ -208,14 +255,12 @@ class ExportController extends Controller
                 default    => null,
             };
 
-            // Date cell
-            $sheet->setCellValue("A{$row}", ExcelDate::PHPToExcel($date->timestamp));
+            $sheet->setCellValue("A{$row}", ExcelDate::PHPToExcel($date->copy()->setTime(12, 0, 0)->getTimestamp()));
             $sheet->getStyle("A{$row}")->getNumberFormat()->setFormatCode('dd/mm/yyyy');
             $sheet->getStyle("A{$row}")->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                 ->setVertical(Alignment::VERTICAL_CENTER);
 
-            // Log data
             $log = $logs->get($dateStr);
 
             if ($log && !$isWeekend && !$isHoliday) {
@@ -229,14 +274,12 @@ class ExportController extends Controller
 
             if ($isHoliday && $log?->obs) $sheet->setCellValue("G{$row}", $log->obs);
 
-            // Total formula
-            $sheet->setCellValue("F{$row}", "=(E{$row}-B{$row})-(D{$row}-C{$row})");
+            $sheet->setCellValue("F{$row}", "=IFERROR(IF(OR(B{$row}=0,E{$row}=0),0,IF(AND(B{$row}<D{$row},E{$row}>C{$row}),(E{$row}-B{$row})-(MIN(E{$row},D{$row})-MAX(B{$row},C{$row})),E{$row}-B{$row})),0)");
             $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode('[h]:mm');
             $sheet->getStyle("F{$row}")->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                 ->setVertical(Alignment::VERTICAL_CENTER);
 
-            // Row style
             $rowStyle = [
                 'font'      => ['size' => 11, 'name' => 'Calibri'],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
@@ -249,7 +292,7 @@ class ExportController extends Controller
 
         $sheet->getStyle("B3:E{$lastDataRow}")->getNumberFormat()->setFormatCode('hh:mm');
 
-        // ── Total row ────────────────────────────────────────────────────────
+        // ── Total row ─────────────────────────────────────────────────────────
         $sheet->setCellValue("E{$totalRow}", 'Total mensal');
         $sheet->getStyle("E{$totalRow}")->applyFromArray([
             'font'      => ['bold' => true, 'size' => 11, 'name' => 'Calibri'],
@@ -257,32 +300,31 @@ class ExportController extends Controller
         ]);
         $sheet->setCellValue("F{$totalRow}", "=SUM(F3:F{$lastDataRow})");
         $sheet->getStyle("F{$totalRow}")->applyFromArray([
-            'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::FILL_HEADER]],
-            'font'    => ['size' => 11, 'name' => 'Calibri'],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::FILL_HEADER]],
+            'font'      => ['size' => 11, 'name' => 'Calibri'],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ]);
         $sheet->getStyle("F{$totalRow}")->getNumberFormat()->setFormatCode('[h]:mm');
         $sheet->getRowDimension($totalRow)->setRowHeight(19.5);
 
-        // ── Average row ──────────────────────────────────────────────────────
+        // ── Average row ───────────────────────────────────────────────────────
         $sheet->setCellValue("E{$avgRow}", 'Média diária');
         $sheet->getStyle("E{$avgRow}")->applyFromArray([
             'font'      => ['bold' => true, 'size' => 11, 'name' => 'Calibri'],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
-        // Average = total / number of days that have hours (F > 0)
         $sheet->setCellValue("F{$avgRow}", "=IFERROR(F{$totalRow}/COUNTIF(F3:F{$lastDataRow},\">0\"),0)");
         $sheet->getStyle("F{$avgRow}")->applyFromArray([
-            'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::FILL_HEADER]],
-            'font'    => ['size' => 11, 'name' => 'Calibri'],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::FILL_HEADER]],
+            'font'      => ['size' => 11, 'name' => 'Calibri'],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         ]);
         $sheet->getStyle("F{$avgRow}")->getNumberFormat()->setFormatCode('[h]:mm');
         $sheet->getRowDimension($avgRow)->setRowHeight(19.5);
 
-        // ── Column widths ────────────────────────────────────────────────────
+        // ── Column widths ─────────────────────────────────────────────────────
         $sheet->getColumnDimension('A')->setWidth(13.57);
         $sheet->getColumnDimension('B')->setWidth(16.0);
         $sheet->getColumnDimension('C')->setWidth(14.0);
@@ -333,13 +375,21 @@ class ExportController extends Controller
     private function streamAllUsersZip(int $year): never
     {
         $tmpFiles = [];
-
         foreach (User::all() as $user) {
             $spreadsheet = $this->makeSpreadsheet();
+            $sheetsAdded = 0;
+
             foreach (self::MONTHS_PT as $month => $monthName) {
+                $logs = $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month));
+                if ($logs->isEmpty()) continue;
                 $sheet = $spreadsheet->createSheet()->setTitle($monthName);
-                $this->buildMonthSheet($sheet, $user, $month, $year, $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month)));
+                $this->buildMonthSheet($sheet, $user, $month, $year, $logs);
+                $sheetsAdded++;
             }
+
+            // Skip users with no logs entirely — no file generated for them
+            if ($sheetsAdded === 0) continue;
+
             $tmp = tempnam(sys_get_temp_dir(), 'ms_') . '.xlsx';
             (new Xlsx($spreadsheet))->save($tmp);
             $tmpFiles["Mindshaker - {$user->name} - {$year}.xlsx"] = $tmp;
