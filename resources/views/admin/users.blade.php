@@ -39,7 +39,6 @@
                                 <select id="" name ="format"
                                     class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-25 p-2.5 placeholder-gray-400">
                                     <option value="xlsx">XLSX</option>
-                                    <option value="csv">CSV</option>
 
                                 </select>
                             </div>

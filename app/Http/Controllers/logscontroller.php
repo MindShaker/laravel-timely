@@ -228,7 +228,7 @@ class logscontroller extends Controller
     return redirect()->route('userlogs')->with('success', 'Your log request has been submitted for approval!');
 }
 
-   public function looklog($logs)
+   public function looklog($logs, Request $request)
     {
         $logs = Logs::findOrFail($logs);
         $this->authorizeLogAccess($logs);
@@ -306,7 +306,7 @@ class logscontroller extends Controller
             ->with('success', 'Your log modification request has been successfully submitted for approval.');
     }
 
-    public function deletelog($logs)
+    public function deletelog($logs, Request $request)
     {
         $logs = Logs::findOrFail($logs);
         $this->authorizeLogAccess($logs);

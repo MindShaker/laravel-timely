@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Logs;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -94,7 +95,23 @@ class ExportController extends Controller
             $this->sendXlsx($spreadsheet, "Mindshaker - {$user->name} - {$year}");
         }
 
-        if (!$hasName && !$hasMonth) $this->streamAllUsersZip($year);
+         if (!$hasName && !$hasMonth) {
+            if (!$request->filled('year')) {
+                // Procura todos os anos únicos que existem na tabela de logs
+                $availableYears = Logs::selectRaw('YEAR(data) as year',[])
+                    ->distinct()
+                    ->orderBy('year', 'desc')
+                    ->pluck('year');
+
+                return view('admin.export_year_selector', [
+                    'exportRoute'    => route('export'),
+                    'params'         => $request->only(['format', 'force']),
+                    'availableYears' => $availableYears,
+                ]);
+            }
+
+            $this->streamAllUsersZip((int) $request->year);
+        }
     }
 
     public function exportuserlog(Request $request)
