@@ -20,6 +20,7 @@ class Esp32Controller extends Controller
 
             $logHoje = Logs::where('user_id', '=', $userId, 'and')
                 ->where('data', $hoje)
+                ->whereIn('status', ['approved', 'pending'])
                 ->first();
 
             if (!$logHoje) {

@@ -39,7 +39,7 @@ class logscontroller extends Controller
         $users = User::findOrFail($id);
         $data  = Carbon::now()->format('Y-m-d');
 
-        $log = Logs::where('data','=', $data,'and')->where('user_id', $id)->first();
+        $log = Logs::where('data','=', $data,'and')->whereIn('status', ['approved', 'pending'])->where('user_id', $id)->first();
 
         if (!$log) {
             return view("user/home");
@@ -264,6 +264,7 @@ class logscontroller extends Controller
         $taken = Logs::with('User')
             ->where('user_id', $user->id)
             ->where('data', $data['data'])
+            ->whereIn('status', ['approved', 'pending'])
             ->where('id', '!=', $logs->id)
             ->exists();
  
