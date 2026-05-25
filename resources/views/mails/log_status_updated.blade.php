@@ -15,8 +15,8 @@
                 </span>
             </li>
             @if($status === 'approved')
-                <li style="margin-bottom: 8px;"><strong>Nova Entrada:</strong> {{ $dados['entrada'] }}</li>
-                <li style="margin-bottom: 8px;"><strong>Nova Saída:</strong> {{ $dados['saida'] }}</li>
+                <li style="margin-bottom: 8px;"><strong>Nova Entrada:</strong>  {{ $print_time = date('H:i', strtotime($dados['entrada']))  }}</li>
+                <li style="margin-bottom: 8px;"><strong>Nova Saída:</strong>{{ $print_time = date('H:i', strtotime($dados['saida']))  }}</li>
             @endif
         </ul>
     </div>

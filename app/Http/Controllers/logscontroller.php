@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
+
 class logscontroller extends Controller
 {
    private function calcTotal(string $entrada, string $saida, string $inicioAlmoco): string

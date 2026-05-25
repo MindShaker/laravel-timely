@@ -6,9 +6,9 @@
     <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2563eb;">
         <h4 style="margin-top: 0; color: #4b5563;">Resumo do Pedido:</h4>
         <ul style="list-style-type: none; padding: 0; margin: 0; color: #1f2937;">
-            <li style="margin-bottom: 8px;"><strong>Entrada:</strong> {{ $log->entrada }}</li>
-            <li style="margin-bottom: 8px;"><strong>Saída:</strong> {{ $log->saida }}</li>
-            <li style="margin-bottom: 8px;"><strong>Total Horas:</strong> {{ $log->total_horas }}</li>
+            <li style="margin-bottom: 8px;"><strong>Entrada:</strong> {{ $print_time = date('H:i', strtotime($log->entrada)) }}</li>
+            <li style="margin-bottom: 8px;"><strong>Saída:</strong> {{ $print_time = date('H:i', strtotime($log->saida)) }}</li>
+            <li style="margin-bottom: 8px;"><strong>Total Horas:</strong> {{ $print_time = date('H:i', strtotime($log->total_horas)) }}</li>
         </ul>
     </div>
 

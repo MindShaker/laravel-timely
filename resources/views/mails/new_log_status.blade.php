@@ -15,9 +15,9 @@
     <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 20px 0;">
         <h4 style="margin-top: 0; color: #4b5563;">Horários Solicitados:</h4>
         <ul style="list-style-type: none; padding: 0; margin: 0; color: #1f2937;">
-            <li style="margin-bottom: 8px;"><strong>Entrada:</strong> {{ $log->entrada }}</li>
-            <li style="margin-bottom: 8px;"><strong>Saída:</strong> {{ $log->saida }}</li>
-            <li style="margin-bottom: 8px;"><strong>Total Horas:</strong> {{ $log->total_horas }}</li>
+            <li style="margin-bottom: 8px;"><strong>Entrada:</strong> {{ $print_time = date('H:i', strtotime($log->entrada)) }}</li>
+            <li style="margin-bottom: 8px;"><strong>Saída:</strong> {{ $print_time = date('H:i', strtotime($log->saida)) }}</li>
+            <li style="margin-bottom: 8px;"><strong>Total Horas:</strong> {{ $print_time = date('H:i', strtotime($log->total_horas)) }}</li>
             @if($log->obs)
                 <li><strong>Observações:</strong> {{ $log->obs }}</li>
             @endif
