@@ -194,9 +194,9 @@ class usercontroller extends Controller
                 'tipo'          => $request->type,
                 'inicio_almoco' => $request->lunch,
             ]);
-            return redirect(route('userlist', absolute: false))->with('success', 'Utilizador criado com sucesso!');
+            return redirect(route('userlist', absolute: false))->with('success', 'User created successfully!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Ocorreu um erro ao criar o utilizador. Tente novamente.')->withInput();
+            return back()->with('error', 'An error occurred while creating the user. Please try again.')->withInput();
         }
     }
 
@@ -221,12 +221,12 @@ class usercontroller extends Controller
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => true]);
             }
-            return back()->with('success', "Comando enviado para o sensor! Peça ao funcionário {$user->name} para colocar o dedo na máquina.");
+            return back()->with('success', "Command sended! The sensor will start the enrollment process for {$user->name}.");
         } catch (\Exception $e) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
             }
-            return back()->with('error', 'Erro ao comunicar com o Broker: ' . $e->getMessage());
+            return back()->with('error', 'Error communicating with the Broker: ' . $e->getMessage());
         }
     }
 
@@ -238,9 +238,9 @@ class usercontroller extends Controller
             $mqtt = $this->makeMqttClient('delete_web_client_' . $id);
             $mqtt->publish('Delete/UserID', (string) $id, 0, false);
             $mqtt->disconnect();
-            return back()->with('success', "Comando enviado! O sensor vai apagar a biometria de {$user->name}.");
+            return back()->with('success', "Command sended! The sensor will delete the biometric data for {$user->name}.");
         } catch (\Exception $e) {
-            return back()->with('error', 'Erro ao comunicar com o Broker MQTT: ' . $e->getMessage());
+            return back()->with('error', 'Error communicating with the Broker MQTT: ' . $e->getMessage());
         }
     }
 
@@ -256,16 +256,16 @@ class usercontroller extends Controller
         $status = $request->input('status');
 
         if ($userId === null || $status === null) {
-            return response()->json(['erro' => 'Dados incompletos'], 400);
+            return response()->json(['error' => 'Incomplete data'], 400);
         }
 
         $user = User::findOrFail($userId);
 
         if ($status == 1) {
             $user->update(['finger' => 1]);
-            return response()->json(['sucesso' => true, 'mensagem' => 'Biometria ativa com sucesso!']);
+            return response()->json(['success' => true, 'message' => 'Biometric data activated successfully!']);
         }
-        return response()->json(['sucesso' => false, 'mensagem' => 'Erro na leitura do dedo']);
+        return response()->json(['success' => false, 'message' => 'Error reading the finger']);
     }
 
     public function receberStatusDeleteFinger(Request $request)
@@ -274,16 +274,16 @@ class usercontroller extends Controller
         $status = $request->input('status');
 
         if ($userId === null || $status === null) {
-            return response()->json(['erro' => 'Dados incompletos'], 400);
+            return response()->json(['error' => 'Incomplete data'], 400);
         }
 
         $user = User::findOrFail($userId);
 
         if ($status == 1) {
             $user->update(['finger' => 0]);
-            return response()->json(['sucesso' => true, 'mensagem' => 'Biometria removida com sucesso da base de dados!']);
+            return response()->json(['sucesso' => true, 'mensagem' => 'Delete biometric data successfully!']);
         }
-        return response()->json(['sucesso' => false, 'mensagem' => 'Erro do ESP32 ao tentar apagar a biometria']);
+        return response()->json(['sucesso' => false, 'mensagem' => 'Error deleting the finger']);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

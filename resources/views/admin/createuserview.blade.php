@@ -71,16 +71,7 @@
 
                 </div>
 
-                <div class="flex items-start mb-6">
-                    <div class="flex items-center h-5">
-                        <input id="remember" type="checkbox" value=""
-                               class="w-4 h-4 border border-gray-600 rounded-sm bg-gray-700 focus:ring-3 focus:ring-yellow-300"
-                            required />
-                    </div>
-                        <label for="remember" class="ms-2 text-sm font-medium text-gray-300">I agree with
-                            the <a href="#" class="text-yellow-300 hover:underline">terms and
-                            conditions</a>.</label>
-                </div>
+                
                 <button type="submit" style="cursor: pointer"
                     class="text-yellow-100 hover:text-yellow-400 border border-yellow-400 hover:bg-inherit focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium text-sm px-5 py-2 text-center  dark:border-yellow-300 text-yellow-300 hover:text-yellow-100 dark:hover:text-yellow-300 dark:hover:ring-yellow-900 dark:focus:bg-yellow-400">SUBMIT</button>
             </form>

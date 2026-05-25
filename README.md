@@ -39,6 +39,8 @@
 | **Notificações de email** | Ativar ou desativar emails de notificação no perfil |
 | **Perfil** | Edição de nome, email e hora de início de almoço |
 
+![User UPLOAD](public/images/user.png)
+
 ### 🛡️ Administrador
 
 | Funcionalidade | Descrição |
@@ -53,9 +55,8 @@
 | **Exportar utilizadores** | Exportação da lista de utilizadores em `.xlsx`|
 | **Gestão de utilizadores** | Criação de utilizadores, alteração de tipo (admin/utilizador) |
 | **Biometria** | Envio de comando MQTT para enroll ou eliminação de impressão digital no sensor ESP32 |
-
 ---
-
+ ![Admin UPLOAD](public/images/admin.png)
 ## 🛠️ Tecnologias
 
 | Camada | Tecnologia |
@@ -224,7 +225,7 @@ O sistema tem dois tipos de utilizador controlados pelo campo `tipo` na tabela `
 As rotas `/admin/*` são protegidas pelo middleware `is_admin` que devolve `403` imediatamente caso um utilizador normal tente aceder.
 
 ---
-
+ ![Userlist UPLOAD](public/images/userlist.png)
 ## 🔄 Fluxo de Aprovação
 
 ### Inserção de novo log (pelo utilizador)
@@ -241,7 +242,9 @@ Admin clica no link (válido por 1 hora)
    ├── Recusado → status = 'rejected', utilizador notificado
    └── Expirado → log eliminado, registado em admin_logs como EXPIRED
 ```
-
+![Ponto User Recebido UPLOAD](public/images/pedido_recebido.png)
+![Ponto Admin UPLOAD](public/images/pedido_aprovacao_admin.png)
+![Ponto User](public/images/pedido_aprovacao_user.png)
 ### Edição de log existente (pelo utilizador)
 
 ```
@@ -257,7 +260,8 @@ Admin clica no link
    └── Expirado → LogApproval marcado como 'expired', registado em admin_logs
 ```
 
-
+![Edicao User](public/images/pedido_edicao_user.png)
+![Edicao Admin](public/images/pedido_edicao_admin.png)
 ---
 
 ## 📊 Exportação
@@ -280,7 +284,7 @@ A exportação segue o template oficial Mindshaker com formatação profissional
 - Antes de exportar, o sistema verifica se existem logs sem hora de saída e apresenta uma página de confirmação com os dias em falta
 
 ---
-
+![Excel Image](public/images/excel.png)
 ## 🤖 Integrações
 
 ### ESP32 + Sensor Biométrico

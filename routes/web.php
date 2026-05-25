@@ -17,10 +17,7 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
  
-Route::get('/welcome', function () {
-    return view('welcome');
-})->name('welcome');
- 
+
 
 Route::post('/esp32/ponto', [Esp32controller::class, 'receberPontoDoEsp32']);
 Route::post('/esp32/enroll-status', [usercontroller::class, 'receberStatusEnroll']);
