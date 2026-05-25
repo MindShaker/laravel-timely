@@ -25,10 +25,11 @@ class usercontroller extends Controller
     public function userlist(Request $request)
     {
         if ($request->input('name') == "") {
-            $users = User::query()->paginate(10);
+            $users = User::query()->orderBy('name', 'asc')->paginate(10);
         } else {
             $users = User::query()
                 ->where("name", "LIKE", "%" . $request->input('name') . "%")
+                ->orderBy('name', 'asc')
                 ->paginate(10)
                 ->withQueryString();
         }
