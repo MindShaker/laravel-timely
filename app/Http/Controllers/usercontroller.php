@@ -147,8 +147,16 @@ class usercontroller extends Controller
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        foreach (['A' => 'Nome', 'B' => 'Email', 'C' => 'Início Almoço',
-                  'D' => 'Tipo', 'E' => 'Notificações', 'F' => 'Criado em'] as $col => $label) {
+        foreach (
+            [
+                'A' => 'Nome',
+                'B' => 'Email',
+                'C' => 'Início Almoço',
+                'D' => 'Tipo',
+                'E' => 'Notificações',
+                'F' => 'Criado em'
+            ] as $col => $label
+        ) {
             $sheet->setCellValue("{$col}1", $label);
         }
         $row = 2;
@@ -202,19 +210,19 @@ class usercontroller extends Controller
     }
 
     public function changeusertype(Request $request, User $user)
-{
-    // Validação de segurança para garantir que só entram os 3 tipos permitidos
-    $request->validate([
-        'tipo' => ['required', 'in:user,worker,admin'],
-    ]);
+    {
+        // Validação de segurança para garantir que só entram os 3 tipos permitidos
+        $request->validate([
+            'tipo' => ['required', 'in:user,worker,admin'],
+        ]);
 
-    // Atualiza com o valor que veio do formulário
-    $user->update([
-        'tipo' => $request->tipo
-    ]);
+        // Atualiza com o valor que veio do formulário
+        $user->update([
+            'tipo' => $request->tipo
+        ]);
 
-    return redirect()->back()->with('success', 'Cargo atualizado com sucesso!');
-}
+        return redirect()->back()->with('success', 'Role updated successfully!');
+    }
 
     // ── Biometrics ────────────────────────────────────────────────────────────
 
