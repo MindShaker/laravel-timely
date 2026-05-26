@@ -70,7 +70,7 @@
                                     Type
                                 </th>
                                 <th scope="col" class="px-6 py-3 font-large text-gray-100">
-                                    Lunch Start
+                                    Lunch 
                                 </th>
                                 <th scope="col" class="px-6 py-3 font-large text-gray-100">
                                     Manage
