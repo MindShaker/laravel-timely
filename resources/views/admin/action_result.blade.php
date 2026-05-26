@@ -40,7 +40,7 @@
 
             <div class="mt-8 flex justify-center gap-4">
                 <button type="button" onclick="window.location='{{ route('adminlogs') }}'" style="cursor: pointer"
-                    class="text-yellow-700 hover:text-yellow-100 border border-yellow-700 hover:bg-yellow-800 focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium text-sm px-5 py-2.5 text-center me-2 mb-2 dark:border-yellow-500 text-yellow-500 hover:text-yellow-100 dark:hover:bg-yellow-600 dark:focus:ring-yellow-900">
+                    class="inline-flex items-center px-4 h-10 rounded-none font-medium text-sm bg-yellow-500 text-white border border-solid border-transparent hover:bg-transparent hover:text-yellow-500 hover:border-yellow-500 focus:outline-none focus:ring-4 focus:ring-yellow-300 transition-all duration-150">
                     Go to logs
                 </button>
 
