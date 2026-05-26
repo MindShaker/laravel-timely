@@ -101,7 +101,7 @@ class logscontroller extends Controller
         if ($request->month != "") $query->where('data', 'like', $request->month . '%');
         if ($request->time  != "") $query->whereDay('data', $request->time);
 
-        $logs = $query->orderBy('data', 'DESC')->paginate(10)->withQueryString();;
+        $logs = $query->orderBy('data', 'DESC')->paginate(10)->withQueryString();
         return view('user/logs', compact('logs'));
     }
 
@@ -137,7 +137,7 @@ class logscontroller extends Controller
             });
         }
 
-        $admin_logs = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();;
+        $admin_logs = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         return view('admin/admin_logs', compact('admin_logs', 'users'));
     }
     

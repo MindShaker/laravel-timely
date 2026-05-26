@@ -204,7 +204,7 @@
                                         </el-dialog>
                                     </td>
 
-                                            <td class="px-6 py-4 text-gray-100">
+                                            <td class="px-10 text-gray-100">
                                                 <button type="button"
                                                     onclick="document.getElementById('dialog-new-{{ $log->id }}').showModal()"
                                                     style="cursor: pointer">
