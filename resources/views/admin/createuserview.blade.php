@@ -68,6 +68,12 @@
                         <label for="default-radio-2"
                                class="ms-2 text-sm font-medium text-gray-300">Admin</label>
                     </div>
+                    <div class="flex items-center">
+                        <input id="default-radio-2" type="radio" value="worker" name="type"
+                               class="w-4 h-4 text-yellow-600 bg-gray-700 border-gray-600 focus:ring-yellow-500 focus:ring-2">
+                        <label for="default-radio-2"
+                               class="ms-2 text-sm font-medium text-gray-300">Worker</label>
+                    </div>
 
                 </div>
 

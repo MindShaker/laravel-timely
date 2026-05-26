@@ -27,9 +27,9 @@ class CheckForgottenLog extends Command
         }
 
         // Apenas users com notificações ativas
-        $users = User::where('tipo', '=', 'user', 'and')
-            ->where('notifications', 1)
-            ->get();
+        $users = User::whereIn('tipo','=', ['user', 'worker'],'and')
+        ->where('notifications', 1)
+        ->get();
 
         foreach ($users as $user) {
             $logsForDay = Logs::where('user_id', '=', $user->id, 'and')

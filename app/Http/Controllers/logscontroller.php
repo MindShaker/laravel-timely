@@ -158,6 +158,7 @@ class logscontroller extends Controller
     public function createlog(Request $request)
 {
     $isAdmin = Auth::user()->tipo === 'admin';
+    $isWorker = Auth::user()->tipo === 'worker';
     
     $isFromAdmin = $isAdmin && $request->filled('user_id');
 
@@ -200,10 +201,10 @@ class logscontroller extends Controller
         'obs'          => $request->obs,
         'created_by'   => Auth::user()->name,
         'updated_by'   => 'Not Updated',
-        'status'       => $isAdmin ? 'approved' : 'pending',
+        'status' => ($isAdmin || Auth::user()->tipo === 'worker') ? 'approved' : 'pending',
     ]);
 
-    if (!$isAdmin) {
+    if (!$isAdmin && !$isWorker) {
         // Notifica o próprio user (só se tiver notificações ativas)
         if ($user->notifications) {
             Mail::to($user->email)->send(new \App\Mail\UserLogConfirmationMail($log));
@@ -218,7 +219,7 @@ class logscontroller extends Controller
         }
     }
 
-    if ($isAdmin) {
+    if ($isAdmin || $isWorker) {
         if ($isFromAdmin) {
             return redirect()->route('adminlogs')->with('success', 'Log created and approved successfully!');
         }
@@ -289,7 +290,13 @@ class logscontroller extends Controller
             $logs->update($dadosPreparados);
             return redirect()->route('adminlogs')->with('message', 'Log updated successfully!');
         }
- 
+
+        
+        if (Auth::user()->tipo === 'worker') {
+            $logs->acao_personalizada = 'EDIT';
+            $logs->update($dadosPreparados);
+            return redirect()->route('userlogs')->with('message', 'Log updated successfully!');
+        }
         $approval = LogApproval::create([
             'log_id'      => $logs->id,
             'user_id'     => Auth::user()->id,

@@ -55,7 +55,8 @@
                     class="w-full relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-transparent">
 
                     <table class="w-full text-sm text-left rtl:text-right text-body">
-                        <thead class="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-transparent">
+                        <thead
+                            class="text-sm text-body bg-neutral-secondary-soft border-b rounded-base border-transparent">
                             <tr>
                                 <th scope="col" class="px-6 py-3 font-large text-gray-100">
                                     Name
@@ -70,7 +71,7 @@
                                     Type
                                 </th>
                                 <th scope="col" class="px-6 py-3 font-large text-gray-100">
-                                    Lunch 
+                                    Lunch
                                 </th>
                                 <th scope="col" class="px-6 py-3 font-large text-gray-100">
                                     Manage
@@ -100,7 +101,11 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <button
-                                            class="{{ $user->tipo == 'admin' ? 'text-yellow-400' : 'text-gray-100' }}">
+                                            class="{{ match ($user->tipo) {
+                                                'admin' => 'text-yellow-400',
+                                                'worker' => 'text-blue-400',
+                                                default => 'text-gray-100',
+                                            } }}">
                                             {{ $user->tipo }}
                                         </button>
                                     </td>
@@ -131,12 +136,14 @@
 
                                             <div tabindex="0"
                                                 class="flex min-h-full items-end justify-center p-4 text-center focus:outline focus:outline-0 sm:items-center sm:p-0">
+
                                                 <el-dialog-panel
                                                     class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:max-w-lg w-full data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95">
+
                                                     <div class="bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                                                         <div class="sm:flex sm:items-start">
                                                             <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                                                                    <h3 id="dialog-title"
+                                                                <h3 id="dialog-title{{ $user->id }}"
                                                                     class="text-base font-semibold text-gray-100">
                                                                     Manage User: {{ $user->name }}
                                                                 </h3>
@@ -151,38 +158,59 @@
                                                     </div>
 
                                                     <div
-                                                        class="bg-gray-700/25 px-4 py-3 flex flex-wrap items-center {{ $user->finger ? 'justify-between' : 'justify-center' }} sm:px-6">
+                                                        class="bg-gray-700/25 px-4 py-4 flex flex-col sm:flex-row gap-4 items-center {{ $user->finger ? 'justify-between' : 'justify-center' }} sm:px-6">
 
                                                         @if ($user->finger)
-                                                            <div>
+                                                            <div class="w-full sm:w-auto">
                                                                 <form
                                                                     action="{{ route('users.delete_finger', $user->id) }}"
                                                                     method="POST">
                                                                     @csrf
-                                                                    <x-primary-red-button>
+                                                                    <x-primary-red-button
+                                                                        class="w-full sm:w-auto h-[46px]">
                                                                         Remove Fingerprint
                                                                     </x-primary-red-button>
                                                                 </form>
                                                             </div>
                                                         @endif
 
-                                                        <div class="flex items-center mt-3 sm:mt-0">
+                                                        <div
+                                                            class="flex flex-col sm:flex-row items-center w-full sm:w-auto justify-end">
+
                                                             <button type="button" style="cursor: pointer"
-                                                                class="text-yellow-400 hover:text-yellow-100 border border-yellow-400 hover:bg-yellow-500 focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium text-sm px-5 py-2 text-center me-2 transition-colors"
-                                                                command="close"
-                                                                commandfor="dialog{{ $user->id }}">Cancel</button>
+                                                                class="text-yellow-400 hover:!text-yellow-100 border border-yellow-400 hover:bg-yellow-500 focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium text-sm px-5 py-2.5 text-center me-2 mb-2 mt-2 dark:border-yellow-500 dark:text-yellow-300 dark:hover:!text-yellow-100 dark:hover:bg-yellow-400 dark:focus:ring-yellow-900"
+                                                                command="close" commandfor="dialog{{ $user->id }}">
+                                                                Cancel
+                                                            </button>
 
                                                             <form action="{{ route('changeusertype', $user->id) }}"
-                                                                method="POST" class="inline-block">
+                                                                method="POST"
+                                                                class="flex flex-col sm:flex-row items-center w-full sm:w-auto">
                                                                 @csrf
                                                                 @method('PUT')
-                                                                <x-primary-app-button type="submit"
-                                                                    commandfor="dialog">Switch
-                                                                    Role</x-primary-app-button>
-                                                            </form>
-                                                        </div>
 
+                                                                <select name="tipo"
+                                                                    class="w-full sm:w-auto bg-gray-800 text-gray-100 border border-gray-600 px-7 PY-2 mr-2 text-base font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 focus:outline-none transition-colors h-[46px] leading-tight cursor-pointer">
+                                                                    <option value="user"
+                                                                        {{ $user->tipo === 'user' ? 'selected' : '' }}>
+                                                                        User</option>
+                                                                    <option value="worker"
+                                                                        {{ $user->tipo === 'worker' ? 'selected' : '' }}>
+                                                                        Worker</option>
+                                                                    <option value="admin"
+                                                                        {{ $user->tipo === 'admin' ? 'selected' : '' }}>
+                                                                        Admin</option>
+                                                                </select>
+
+                                                                <x-primary-app-button type="submit" commandfor="dialog"
+                                                                    >
+                                                                    Switch
+                                                                </x-primary-app-button>
+                                                            </form>
+
+                                                        </div>
                                                     </div>
+
                                                 </el-dialog-panel>
                                             </div>
                                         </dialog>

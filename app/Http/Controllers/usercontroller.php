@@ -201,11 +201,20 @@ class usercontroller extends Controller
         }
     }
 
-    public function changeusertype(User $user)
-    {
-        $user->update(['tipo' => $user->tipo === 'user' ? 'admin' : 'user']);
-        return redirect()->back();
-    }
+    public function changeusertype(Request $request, User $user)
+{
+    // Validação de segurança para garantir que só entram os 3 tipos permitidos
+    $request->validate([
+        'tipo' => ['required', 'in:user,worker,admin'],
+    ]);
+
+    // Atualiza com o valor que veio do formulário
+    $user->update([
+        'tipo' => $request->tipo
+    ]);
+
+    return redirect()->back()->with('success', 'Cargo atualizado com sucesso!');
+}
 
     // ── Biometrics ────────────────────────────────────────────────────────────
 
