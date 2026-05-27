@@ -206,13 +206,15 @@ class ExportController extends Controller
     }
 
     // ── Core sheet builder ────────────────────────────────────────────────────
-
-    private function buildMonthSheet(Worksheet $sheet, User $user, int $month, int $year, $logs): void
+private function buildMonthSheet(Worksheet $sheet, User $user, int $month, int $year, $logs): void
     {
         $monthName    = self::MONTHS_PT[$month];
         $daysInMonth  = Carbon::create($year, $month, 1)->daysInMonth;
-        $inicioAlmoco = $user->inicio_almoco ?? '12:30';
-        $fimAlmoco    = Carbon::parse($inicioAlmoco)->addHour()->format('H:i');
+        
+        // Fallbacks estáticos caso o log não tenha registo de almoço
+        $inicioAlmocoPadrao = $user->inicio_almoco ?? '12:30';
+        $fimAlmocoPadrao    = Carbon::parse($inicioAlmocoPadrao)->addHour()->format('H:i');
+        
         $holidays     = $this->getPortugueseHolidays($year);
         $lastDataRow  = $daysInMonth + 2;
         $totalRow     = $daysInMonth + 3;
@@ -221,7 +223,7 @@ class ExportController extends Controller
         // ── Row 1: header ─────────────────────────────────────────────────────
         $headerData = [
             'A1' => ['Trabalhador:', true,  Alignment::HORIZONTAL_LEFT],
-            'B1' => [$user->name,    false, Alignment::HORIZONTAL_LEFT],
+            'B1' => [$user->name,     false, Alignment::HORIZONTAL_LEFT],
             'C1' => ['Mês:',         true,  Alignment::HORIZONTAL_RIGHT],
             'D1' => [$monthName,     false, Alignment::HORIZONTAL_LEFT],
             'E1' => ['Ano:',         true,  Alignment::HORIZONTAL_RIGHT],
@@ -281,9 +283,25 @@ class ExportController extends Controller
             $log = $logs->get($dateStr);
 
             if ($log && !$isWeekend && !$isHoliday) {
+                $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
+                    'font'      => ['size' => 11, 'name' => 'Calibri'],
+                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+                ]);
+
                 $this->setTimeCell($sheet, "B{$row}", $log->entrada);
+
+                // 1. Procura o fim de almoço usando a propriedade correta: final_almoço
+                $temFimAlmocoValido = !empty($log->final_almoço) && !in_array(trim($log->final_almoço), ['00:00', '00:00:00']);
+                $fimAlmoco = $temFimAlmocoValido ? trim($log->final_almoço) : $fimAlmocoPadrao;
+
+                // 2. Calcula o início do almoço dinamicamente (-1 hora)
+                $inicioAlmoco = Carbon::parse($fimAlmoco)->subHour()->format('H:i');
+
+                // 3. Grava os valores nas colunas C (Início Pausa) e D (Fim Pausa)
                 $this->setTimeCell($sheet, "C{$row}", $inicioAlmoco);
                 $this->setTimeCell($sheet, "D{$row}", $fimAlmoco);
+
                 $exitOk = $log->saida && !in_array(trim($log->saida), ['00:00', '00:00:00']);
                 if ($exitOk) $this->setTimeCell($sheet, "E{$row}", $log->saida);
                 if ($log->obs) $sheet->setCellValue("G{$row}", $log->obs);
@@ -331,7 +349,7 @@ class ExportController extends Controller
             'font'      => ['bold' => true, 'size' => 11, 'name' => 'Calibri'],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
-        $sheet->setCellValue("F{$avgRow}", "=IFERROR(F{$totalRow}/COUNTIF(F3:F{$lastDataRow},\">0\"),0)");
+        $sheet->setCellValue("F{$avgRow}", "=IFERROR(F{$totalRow}/COUNTIF(F3:F{$lastDataRow}, \">0\"), 0)");
         $sheet->getStyle("F{$avgRow}")->applyFromArray([
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::FILL_HEADER]],
             'font'      => ['size' => 11, 'name' => 'Calibri'],

@@ -40,6 +40,22 @@
 | **Perfil** | Edição de nome, email e hora de início de almoço |
 
 ![User UPLOAD](public/images/user.png)
+![Userlogs UPLOAD](public/images/userlogs.png)
+
+### 🔧 Worker
+
+| Funcionalidade | Descrição |
+|---|---|
+| **Marcação de entrada/saída** | Igual ao utilizador normal — via web ou sensor biométrico |
+| **Ver logs** | Visualização dos seus próprios registos de ponto (aprovados) |
+| **Inserir log** | Inserção direta de logs em falta **sem necessidade de aprovação** |
+| **Editar log** | Edição direta dos seus logs **sem necessidade de aprovação** |
+| **Eliminar log** | Eliminação de um registo próprio |
+| **Exportar logs** | Exportação dos seus logs em `.xlsx` |
+| **Lembrete de email** | Recebe emails de lembrete quando tem logs em falta |
+| **Perfil** | Edição de nome, email e hora de início de almoço |
+
+> O worker **não envia nem recebe** emails de pedidos de inserção ou edição — as suas alterações são aplicadas diretamente, sem passar pelo fluxo de aprovação.
 
 ### 🛡️ Administrador
 
@@ -49,14 +65,19 @@
 | **Editar log** | Edição direta de qualquer log sem necessidade de aprovação |
 | **Eliminar log** | Eliminação de qualquer log |
 | **Criar log** | Inserção de log para qualquer utilizador com aprovação imediata |
-| **Aprovar/Recusar pedidos** | Gestão de pedidos de inserção e edição submetidos por utilizadores — via email (link com expiração de 1h) ou painel |
+| **Aprovar/Recusar pedidos** | Gestão de pedidos de inserção e edição submetidos por utilizadores normais — via email (link com expiração de 1h) ou painel |
 | **Audit log** | Consulta do historial completo de alterações (`admin_logs`) com filtros por utilizador e mês |
 | **Exportar logs** | Exportação profissional em `.xlsx` formatado (Mindshaker template) com múltiplos cenários |
 | **Exportar utilizadores** | Exportação da lista de utilizadores em `.xlsx`|
-| **Gestão de utilizadores** | Criação de utilizadores, alteração de tipo (admin/utilizador) |
+| **Gestão de utilizadores** | Criação de utilizadores, alteração de tipo (admin/user/worker) |
 | **Biometria** | Envio de comando MQTT para enroll ou eliminação de impressão digital no sensor ESP32 |
+
 ---
+
  ![Admin UPLOAD](public/images/admin.png)
+ ![Adminlist UPLOAD](public/images/adminlist.png)
+![Adminlogs UPLOAD](public/images/adminlogs.png)
+
 ## 🛠️ Tecnologias
 
 | Camada | Tecnologia |
@@ -215,18 +236,23 @@ resources/views/
 
 ## 👥 Perfis de Utilizador
 
-O sistema tem dois tipos de utilizador controlados pelo campo `tipo` na tabela `users`:
+O sistema tem três tipos de utilizador controlados pelo campo `tipo` na tabela `users`:
 
-| Campo | Valor | Descrição |
-|---|---|---|
-| `tipo` | `user` | Utilizador normal — acesso apenas às suas próprias rotas `/user/*` |
-| `tipo` | `admin` | Administrador — acesso total incluindo `/admin/*` |
+| Campo | Valor | Inserção/Edição de logs | Fluxo de aprovação | Emails de lembrete | Emails de pedidos |
+|---|---|---|---|---|---|
+| `tipo` | `user` | Requer aprovação de admin | ✅ Sim | ✅ Sim | ✅ Sim |
+| `tipo` | `worker` | Direta, sem aprovação | ❌ Não | ✅ Sim | ❌ Não |
+| `tipo` | `admin` | Direta, sem aprovação | ❌ Não | ❌ Não | ✅ Recebe pedidos |
 
-As rotas `/admin/*` são protegidas pelo middleware `is_admin` que devolve `403` imediatamente caso um utilizador normal tente aceder.
+As rotas `/admin/*` são protegidas pelo middleware `is_admin` que devolve `403` imediatamente caso um utilizador normal ou worker tente aceder.
 
 ---
+
  ![Userlist UPLOAD](public/images/userlist.png)
+
 ## 🔄 Fluxo de Aprovação
+
+> **Nota:** O fluxo de aprovação aplica-se **apenas a utilizadores com `tipo = user`**. Workers e admins não passam por este processo.
 
 ### Inserção de novo log (pelo utilizador)
 
@@ -242,9 +268,11 @@ Admin clica no link (válido por 1 hora)
    ├── Recusado → status = 'rejected', utilizador notificado
    └── Expirado → log eliminado, registado em admin_logs como EXPIRED
 ```
+
 ![Ponto User Recebido UPLOAD](public/images/pedido_recebido.png)
 ![Ponto Admin UPLOAD](public/images/pedido_aprovacao_admin.png)
 ![Ponto User](public/images/pedido_aprovacao_user.png)
+
 ### Edição de log existente (pelo utilizador)
 
 ```
@@ -262,6 +290,7 @@ Admin clica no link
 
 ![Edicao User](public/images/pedido_edicao_user.png)
 ![Edicao Admin](public/images/pedido_edicao_admin.png)
+
 ---
 
 ## 📊 Exportação
@@ -284,7 +313,9 @@ A exportação segue o template oficial Mindshaker com formatação profissional
 - Antes de exportar, o sistema verifica se existem logs sem hora de saída e apresenta uma página de confirmação com os dias em falta
 
 ---
+
 ![Excel Image](public/images/excel.png)
+
 ## 🤖 Integrações
 
 ### ESP32 + Sensor Biométrico
@@ -302,6 +333,22 @@ O sensor físico comunica com a aplicação através de dois mecanismos:
 
 Estas rotas estão **fora** do middleware `auth` para serem acessíveis pelo hardware diretamente.
 
+
+---
+
+## 📧 Emails Enviados
+
+| Evento | Destinatário | Tipo de utilizador | Classe |
+|---|---|---|---|
+| Novo pedido de log | Admins com notificações ativas | `user` apenas | `NewLogRequestMail` |
+| Confirmação de submissão | Utilizador (se notificações ativas) | `user` apenas | `UserLogConfirmationMail` |
+| Log aprovado/recusado | Utilizador (se notificações ativas) | `user` apenas | `NewLogStatusMail` |
+| Pedido de edição | Admins com notificações ativas | `user` apenas | `LogEditRequestMail` |
+| Edição aprovada/recusada | Utilizador (se notificações ativas) | `user` apenas | `LogStatusUpdatedMail` |
+| Lembrete de ponto em falta | Utilizadores com notificações ativas | `user` e `worker` | `LembretePontoMail` |
+
+![Email Image](public/images/email.png)
+
 ---
 
 ## 🔐 Segurança
@@ -317,18 +364,7 @@ Estas rotas estão **fora** do middleware `auth` para serem acessíveis pelo har
 
 ---
 
-## 📧 Emails Enviados
 
-| Evento | Destinatário | Classe |
-|---|---|---|
-| Novo pedido de log | Admins com notificações ativas | `NewLogRequestMail` |
-| Confirmação de submissão | Utilizador (se notificações ativas) | `UserLogConfirmationMail` |
-| Log aprovado/recusado | Utilizador (se notificações ativas) | `NewLogStatusMail` |
-| Pedido de edição | Admins com notificações ativas | `LogEditRequestMail` |
-| Edição aprovada/recusada | Utilizador (se notificações ativas) | `LogStatusUpdatedMail` |
-| Lembrete de ponto em falta | Utilizadores com notificações ativas | `LembretePontoMail` |
-
----
 
 ## 📄 Licença
 

@@ -39,8 +39,8 @@
                                     <x-text-input type="month" name="month" value="{{ request('month') }}" />
                                 </div>
                                 <div class ="ml-2">
-                                    <input type="number" min="1" max="30" name="time"
-                                        placeholder="DAY" value="{{ request('time') }}"
+                                    <input type="number" min="1" max="30" name="time" placeholder="DAY"
+                                        value="{{ request('time') }}"
                                         class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-500 focus:border-yellow-500 p-2.5 w-24 appearance-none placeholder-gray-400" />
                                 </div>
 
@@ -72,7 +72,7 @@
                             <select id="" name ="format"
                                 class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-25 p-2.5 placeholder-gray-400">
                                 <option value="xlsx">XLSX</option>
-                               
+
 
                             </select>
                         </div>
@@ -135,10 +135,10 @@
                                     {{ $print_time = date('H:i', strtotime($log->entrada)) }}
                                 </td>
                                 <td class="px-6 py-4 text-gray-100">
-                                    {{ $print_time = date('H:i', strtotime($log->user->inicio_almoco)) }}
+                                    {{ date('H:i', strtotime('-1 hour', strtotime($log->final_almoço))) }}
                                 </td>
                                 <td class="px-6 py-4 text-gray-100">
-                                    {{ $print_time = date('H:i', strtotime($log->final_almoço)) }}
+                                    {{ date('H:i', strtotime($log->final_almoço)) }}
                                 </td>
                                 <td class="px-6 py-4 text-gray-100">
                                     {{ $print_time = date('H:i', strtotime($log->saida)) }}
