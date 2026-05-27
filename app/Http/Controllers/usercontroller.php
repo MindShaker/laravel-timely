@@ -233,7 +233,23 @@ class usercontroller extends Controller
         try {
             $mqtt = $this->makeMqttClient('enroll_web_client_' . $id);
             $mqtt->publish('Enroll/UserID', (string) $id, 0, false);
-            $mqtt->publish('Enroll/Nome', $user->name, 0, false);
+            $mapaAcentos = [
+            'á'=>'a', 'à'=>'a', 'ã'=>'a', 'â'=>'a', 'ä'=>'a', 'å'=>'a',
+            'Á'=>'A', 'À'=>'A', 'Ã'=>'A', 'Â'=>'A', 'Ä'=>'A', 'Å'=>'A',
+            'é'=>'e', 'è'=>'e', 'ê'=>'e', 'ë'=>'e',
+            'É'=>'E', 'È'=>'E', 'Ê'=>'E', 'Ë'=>'E',
+            'í'=>'i', 'ì'=>'i', 'î'=>'i', 'ï'=>'i',
+            'Í'=>'I', 'Ì'=>'I', 'Î'=>'I', 'Ï'=>'I',
+            'ó'=>'o', 'ò'=>'o', 'õ'=>'o', 'ô'=>'o', 'ö'=>'o',
+            'Ó'=>'O', 'Ò'=>'O', 'Õ'=>'O', 'Ô'=>'O', 'Ö'=>'O',
+            'ú'=>'u', 'ù'=>'u', 'û'=>'u', 'ü'=>'u',
+            'Ú'=>'U', 'Ù'=>'U', 'Û'=>'U', 'Ü'=>'U',
+            'ç'=>'c', 'Ç'=>'C', 'ñ'=>'n', 'Ñ'=>'N'
+            ];
+            $nomeLimpo = strtr($user->name, $mapaAcentos);
+
+            // 3. Envia via MQTT
+            $mqtt->publish('Enroll/Nome', $nomeLimpo, 0, false);
             $mqtt->disconnect();
 
             if ($request->ajax() || $request->wantsJson()) {
