@@ -68,7 +68,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/approve-new-log/{id}',         [Logapprovalcontroller::class, 'approveNewLog'])->name('admin.approve_new_log');
         Route::get('/reject-new-log/{id}',          [Logapprovalcontroller::class, 'rejectNewLog'])->name('admin.reject_new_log');
  
-         Route::get('/users',                        [usercontroller::class, 'userlist'])->name('userlist');
+        Route::get('/users',                        [usercontroller::class, 'userlist'])->name('userlist');
+        Route::put('/admin/users/{user}/finger-choice', [usercontroller::class, 'updateFingerChoice'])->name('users.update_finger_choice');
         Route::post('/users/{id}/delete-finger',    [usercontroller::class, 'deleteFinger'])->name('users.delete_finger');
         Route::get('/createuserview',               [usercontroller::class, 'createuserview'])->name('createuserview');
         Route::post('/usercreate',                  [usercontroller::class, 'createuser'])->name('createuser');

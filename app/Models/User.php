@@ -29,6 +29,7 @@ class User extends Authenticatable
         'inicio_almoco',
         'finger',
         'notifications',
+        'chosen_finger',
     ];
 
     /**

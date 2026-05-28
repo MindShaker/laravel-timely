@@ -224,6 +224,19 @@ class usercontroller extends Controller
         return redirect()->back()->with('success', 'Role updated successfully!');
     }
 
+    public function updateFingerChoice(Request $request, User $user)
+    {
+        $request->validate([
+            'chosen_finger' => ['required', 'in:Right Thumb,Left Thumb,Right Index,Left Index'],
+        ]);
+
+        $user->update([
+            'chosen_finger' => $request->chosen_finger
+        ]);
+
+        return redirect()->back()->with('success', 'Finger choice updated successfully!');
+    }
+
     // ── Biometrics ────────────────────────────────────────────────────────────
 
     public function enroll(Request $request, $id)
