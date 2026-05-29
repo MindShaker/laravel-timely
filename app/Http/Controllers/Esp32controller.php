@@ -40,7 +40,7 @@ class Esp32Controller extends Controller
                 });
                 return response()->json([
                     'status'  => 'success',
-                    'message' => 'Entry registered for ' . $user->name,
+                    'message' => 'Entrada registada para ' . $user->name,
                     'hora'    => $agora,
                 ]);
             }
