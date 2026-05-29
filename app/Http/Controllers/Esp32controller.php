@@ -41,7 +41,7 @@ class Esp32Controller extends Controller
                 return response()->json([
                     'status'  => 'success',
                     'event_type' => 'entry',
-                    'user_name' => $user->name,
+                    'user_name' => explode(' ', $user->name)[0],
                     'message' => 'Entrada registada para ' . $user->name,
                     'hora'    => $agora,
                 ]);
@@ -59,7 +59,7 @@ class Esp32Controller extends Controller
                 return response()->json([
                     'status'  => 'success',
                     'event_type'   => 'exit',
-                    'user_name'    => $user->name,
+                    'user_name' => explode(' ', $user->name)[0],
                     'message' => 'Saída registada para ' . $user->name,
                     'total'   => $total,
                 ]);
@@ -81,7 +81,7 @@ class Esp32Controller extends Controller
             return response()->json([
                 'status'  => 'error',
                 'event_type' => 'after_hours',
-                'user_name' => $user->name,
+                'user_name' => explode(' ', $user->name)[0],
                 'message' => 'Log for today already has an exit time. After hours attempt recorded and admin notified.',
             ], 400);
 
