@@ -40,12 +40,13 @@ class Esp32Controller extends Controller
                 });
                 return response()->json([
                     'status'  => 'success',
+                    'event_type' => 'entry',
+                    'user_name' => $user->name,
                     'message' => 'Entrada registada para ' . $user->name,
                     'hora'    => $agora,
                 ]);
             }
-
-            // No exit yet → register exit
+            
             if (in_array($logHoje->saida, ['00:00', '00:00:00'])) {
                 $total = $this->calcTotal($logHoje->entrada, $agora, $user->inicio_almoco);
                 $logHoje->withoutEvents(function () use ($logHoje, $agora, $total) {
@@ -57,6 +58,8 @@ class Esp32Controller extends Controller
                 });
                 return response()->json([
                     'status'  => 'success',
+                    'event_type'   => 'exit',
+                    'user_name'    => $user->name,
                     'message' => 'Saída registada para ' . $user->name,
                     'total'   => $total,
                 ]);
@@ -77,6 +80,8 @@ class Esp32Controller extends Controller
 
             return response()->json([
                 'status'  => 'error',
+                'event_type' => 'after_hours',
+                'user_name' => $user->name,
                 'message' => 'Log for today already has an exit time. After hours attempt recorded and admin notified.',
             ], 400);
 
