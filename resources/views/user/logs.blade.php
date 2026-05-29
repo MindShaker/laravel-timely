@@ -120,7 +120,7 @@
                                     {{ $print_time = date('H:i', strtotime($log->entrada)) }}
                                 </td>
                                 <td class="px-6 py-4 text-gray-100">
-                                    {{ date('H:i', strtotime('-1 hour', strtotime($log->final_almoço))) }}
+                                    {{ date('H:i', strtotime($log->user->inicio_almoco)) }}
                                 </td>
                                 <td class="px-6 py-4 text-gray-100">
                                     {{ date('H:i', strtotime($log->final_almoço)) }}

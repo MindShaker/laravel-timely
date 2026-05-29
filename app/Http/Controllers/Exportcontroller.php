@@ -280,33 +280,27 @@ private function buildMonthSheet(Worksheet $sheet, User $user, int $month, int $
                 ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                 ->setVertical(Alignment::VERTICAL_CENTER);
 
-            $log = $logs->get($dateStr);
-
+             $log = $logs->get($dateStr);
+ 
             if ($log && !$isWeekend && !$isHoliday) {
-                $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
-                    'font'      => ['size' => 11, 'name' => 'Calibri'],
-                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-                    'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
-                ]);
-
                 $this->setTimeCell($sheet, "B{$row}", $log->entrada);
-
-                // 1. Procura o fim de almoço usando a propriedade correta: final_almoço
-                $temFimAlmocoValido = !empty($log->final_almoço) && !in_array(trim($log->final_almoço), ['00:00', '00:00:00']);
-                $fimAlmoco = $temFimAlmocoValido ? trim($log->final_almoço) : $fimAlmocoPadrao;
-
-                // 2. Calcula o início do almoço dinamicamente (-1 hora)
-                $inicioAlmoco = Carbon::parse($fimAlmoco)->subHour()->format('H:i');
-
-                // 3. Grava os valores nas colunas C (Início Pausa) e D (Fim Pausa)
+ 
+                // Início do almoço: sempre do perfil do utilizador
+                $inicioAlmoco = $inicioAlmocoPadrao;
+ 
+                // Fim do almoço: usa o valor real do log se existir, senão usa o padrão
+                $temFimAlmocoValido = !empty($log->{'final_almoço'})
+                    && !in_array(trim($log->{'final_almoço'}), ['00:00', '00:00:00']);
+                $fimAlmoco = $temFimAlmocoValido ? trim($log->{'final_almoço'}) : $fimAlmocoPadrao;
+ 
                 $this->setTimeCell($sheet, "C{$row}", $inicioAlmoco);
                 $this->setTimeCell($sheet, "D{$row}", $fimAlmoco);
-
+ 
                 $exitOk = $log->saida && !in_array(trim($log->saida), ['00:00', '00:00:00']);
                 if ($exitOk) $this->setTimeCell($sheet, "E{$row}", $log->saida);
                 if ($log->obs) $sheet->setCellValue("G{$row}", $log->obs);
             }
-
+ 
             if ($isHoliday && $log?->obs) $sheet->setCellValue("G{$row}", $log->obs);
 
             $sheet->setCellValue("F{$row}", "=IFERROR(IF(OR(B{$row}=0,E{$row}=0),0,IF(AND(B{$row}<D{$row},E{$row}>C{$row}),(E{$row}-B{$row})-(MIN(E{$row},D{$row})-MAX(B{$row},C{$row})),E{$row}-B{$row})),0)");
