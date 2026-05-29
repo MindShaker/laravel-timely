@@ -27,10 +27,11 @@
                                         <select id="" name ="name"
                                             class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-full p-2.5 placeholder-gray-400">
                                             <option value="">ALL USERS</option>
-                                            @foreach ($users as $user)
-                                                <option
-                                                    value="{{ $user->name }}"{{ request('name') == $user->name ? 'selected' : '' }}>
-                                                    {{ $user->name }}</option>
+                                            @foreach ($users->sortBy('name') as $user)
+                                                <option value="{{ $user->name }}"
+                                                    {{ request('name') == $user->name ? 'selected' : '' }}>
+                                                    {{ $user->name }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
