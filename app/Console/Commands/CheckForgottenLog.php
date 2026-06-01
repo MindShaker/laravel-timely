@@ -27,12 +27,13 @@ class CheckForgottenLog extends Command
         }
 
         // Apenas users com notificações ativas
-        $users = User::whereIn('tipo','=', ['user', 'worker'],'and')
-        ->where('notifications', 1)
-        ->get();
+        $users = User::whereIn('tipo', ['user', 'worker'])
+            ->where('notifications', 1)
+            ->get();
+            $this->info("Users found: " . $users->count()); 
 
         foreach ($users as $user) {
-            $logsForDay = Logs::where('user_id', '=', $user->id, 'and')
+            $logsForDay = Logs::where('user_id', $user->id)
                 ->whereDate('data', $lastBusinessDay)
                 ->get();
 
@@ -72,9 +73,16 @@ class CheckForgottenLog extends Command
         $monthDay = $date->format('m-d');
 
         $fixedHolidays = [
-            '01-01', '04-25', '05-01', '06-10',
-            '08-15', '10-05', '11-01', '12-01',
-            '12-08', '12-25',
+            '01-01',
+            '04-25',
+            '05-01',
+            '06-10',
+            '08-15',
+            '10-05',
+            '11-01',
+            '12-01',
+            '12-08',
+            '12-25',
         ];
 
         if (in_array($monthDay, $fixedHolidays)) return true;
