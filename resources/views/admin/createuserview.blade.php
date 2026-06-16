@@ -2,19 +2,19 @@
     <div class="py-9">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 @if (session('success'))
-    <div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
+    <div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-surface dark:text-green-400" role="alert">
         <span class="font-medium">Sucess!</span> {{ session('success') }}
     </div>
 @endif
 
 @if (session('error'))
-    <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+    <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-surface dark:text-red-400" role="alert">
         <span class="font-medium">Error!</span> {{ session('error') }}
     </div>
 @endif
 
 @if ($errors->any())
-    <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+    <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-surface dark:text-red-400" role="alert">
         <span class="font-medium">Please fix the following errors:</span>
         <ul class="mt-1.5 list-disc list-inside">
             @foreach ($errors->all() as $error)
@@ -58,19 +58,19 @@
                     </div>
                     <div class="flex items-center mb-4">
                         <input checked id="default-radio-1" type="radio" value="user" name="type"
-                               class="w-4 h-4 text-yellow-600 bg-gray-700 border-gray-600 focus:ring-yellow-500 focus:ring-2">
+                               class="w-4 h-4 text-yellow-600 bg-input border-gray-600 focus:ring-yellow-500 focus:ring-2">
                         <label for="default-radio-1"
                                class="ms-2 text-sm font-medium text-gray-300">User</label>
                     </div>
                     <div class="flex items-center">
                         <input id="default-radio-2" type="radio" value="admin" name="type"
-                               class="w-4 h-4 text-yellow-600 bg-gray-700 border-gray-600 focus:ring-yellow-500 focus:ring-2">
+                               class="w-4 h-4 text-yellow-600 bg-input border-gray-600 focus:ring-yellow-500 focus:ring-2">
                         <label for="default-radio-2"
                                class="ms-2 text-sm font-medium text-gray-300">Admin</label>
                     </div>
                     <div class="flex items-center">
                         <input id="default-radio-2" type="radio" value="worker" name="type"
-                               class="w-4 h-4 text-yellow-600 bg-gray-700 border-gray-600 focus:ring-yellow-500 focus:ring-2">
+                               class="w-4 h-4 text-yellow-600 bg-input border-gray-600 focus:ring-yellow-500 focus:ring-2">
                         <label for="default-radio-2"
                                class="ms-2 text-sm font-medium text-gray-300">Worker</label>
                     </div>

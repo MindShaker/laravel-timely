@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-xl w-full bg-gray-800 p-8 shadow rounded-md">
+        <div class="max-w-xl w-full bg-surface p-8 shadow rounded-md">
 
             {{-- Icon + Title --}}
             <div class="text-center">

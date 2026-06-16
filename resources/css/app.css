@@ -7,7 +7,412 @@
 @source '../**/*.js';
 @source "../node_modules/flowbite-datepicker";
 
-html {
-    color-scheme: dark; /* Força o browser a renderizar tudo (incluindo scrollbars) em modo escuro */
-    background-color: #111827; /* Garante que o fundo não pisca a branco ao carregar (bg-gray-900) */
+/* ─── Design tokens — Dark theme (default) ──────────────────────────────── */
+:root {
+    --font-sans: 'Figtree', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    --color-surface-canvas: #1e1f21;
+    --color-chrome-top-bar: #2a2b2d;
+    --color-surface-panel: #2a2b2d;
+    --color-surface-detail-shell: #2a2b2d;
+    --color-surface-panel-hover: #353739;
+    --color-surface-inset-well: #111213;
+    --color-board-lane-bg: #191a1c;
+    --color-board-column-outline: #262626;
+    --color-divider-line: #404040;
+    --color-watermark-fill: #1a1b1d;
+
+    --color-text-body: #e8e8e8;
+    --color-text-muted: #b0b0b8;
+    --color-text-heading: #fafafa;
+    --color-badge-icon-on-solid-fg: var(--color-text-body);
+
+    --color-accent-brand: #d39a11;
+    --color-accent-soft: #e5a020;
+    --color-accent-button-bg: #5c430a;
+    --color-accent-button-bg-hover: #6b5012;
+    --color-text-on-accent: #ffffff;
+
+    --color-nav-item-fg: #ffffff;
+    --color-nav-active-bg: #1e1f21;
+    --color-dropdown-active-bg: #1e1f21;
+    --color-nav-active-fg: #ffffff;
+    --color-nav-item-hover-bg: #3a3a3c;
+
+    --color-status-badge-completed-fill: #052e16;
+    --color-status-badge-completed-outline: #15803d;
+    --color-status-badge-in-progress-fill: #172554;
+    --color-status-badge-in-progress-outline: #1d4ed8;
+    --color-status-badge-on-hold-fill: #5b471c;
+    --color-status-badge-on-hold-outline: #f3bd4a;
+    --color-status-badge-done-in-dev-fill: #042f2e;
+    --color-status-badge-done-in-dev-outline: #0f766e;
+    --color-status-badge-in-review-fill: #3b0764;
+    --color-status-badge-in-review-outline: #7e22ce;
+    --color-status-badge-recurring-fill: #5e2842;
+    --color-status-badge-recurring-outline: #b0607e;
+    --color-status-badge-not-completed-fill: #1e1f21;
+    --color-status-badge-not-completed-outline: #404040;
+
+    --color-priority-urgent: #ef4444;
+    --color-priority-highest: #c0392b;
+    --color-priority-high: #e07a6e;
+    --color-priority-medium: #d4a83d;
+    --color-priority-low: #5a9fd4;
+    --color-priority-lowest: #7a8a9a;
+
+    --color-field-bg: #1e1f21;
+    --color-field-border: #3f3f46;
+    --color-field-focus: #737373;
+    --color-field-placeholder: #737373;
+    --color-field-outline-strong: #a1a1aa;
+    --color-filter-select-selected-bg: #2a2b2d;
+
+    --color-chrome-hover-wash: var(--color-surface-panel-hover);
+    --color-card-hover-outline: #525252;
+    --color-table-row-line: #404040;
+    --color-menu-option-hover-bg: #353739;
+
+    --color-chip-neutral-bg: #1e2126;
+    --color-chip-neutral-border: #1e2126;
+    --color-chip-neutral-hover-bg: var(--color-surface-panel);
+
+    --color-segmented-track-bg: #202124;
+    --color-segmented-selected-bg: var(--color-surface-panel-hover);
+    --color-segmented-selected-fg: var(--color-text-body);
+    --color-segmented-unselected-bg: transparent;
+
+    --color-markdown-bar-bg: #2a2b2d;
+    --color-markdown-tabs-active-bg: var(--color-segmented-selected-bg);
+    --color-markdown-tabs-active-fg: var(--color-segmented-selected-fg);
+
+    --color-task-strip-badge-bg: #3a3b3d;
+    --color-task-strip-badge-fg: #ffffff;
+    --color-task-strip-badge-border: #3f3f46;
+
+    --color-skeleton-block: #2c2c2f;
+
+    --color-toolbar-filter-bg: #1e1f21;
+    --color-toolbar-filter-hover: #2a2b2d;
+
+    --color-control-disabled-border: #39393e;
+    --color-control-disabled-fg: #71717a;
+
+    --color-destructive-bg: #7f1d1d;
+    --color-destructive-border: #b91c1c;
+    --color-destructive-hover: #991b1b;
+    --color-destructive-fg: #ffffff;
+    --color-destructive-disabled-bg: #7f1d1d;
+    --color-destructive-disabled-border: #dc2626;
+    --color-destructive-disabled-fg: #a1a1aa;
+
+    --color-timeline-billable: var(--color-accent-brand);
+    --color-timeline-non-billable: #3b82f6;
+    --color-timeline-grid-line: #3f3f46;
+    --color-timeline-selected-day-fill: #9ca3af;
+    --color-timeline-hover-day-fill: #9ca3af;
+    --color-timeline-target-limit-line: #ef4444;
+    --color-timeline-axis-text: #9ca3af;
+    --color-timeline-tooltip-bg: #1e1f21;
+    --color-timeline-tooltip-border: #3f3f46;
+    --color-timeline-tooltip-text: #ffffff;
+    --color-timeline-tooltip-label-text: #9ca3af;
+    --color-timeline-time-entries-btn-fg: #ffffff;
+
+    --color-timelog-badge-billable-fill: var(--color-accent-button-bg);
+    --color-timelog-badge-billable-outline: var(--color-accent-brand);
+    --color-timelog-badge-billable-fg: var(--color-text-on-accent);
+    --color-timelog-badge-non-billable-fill: #1d4ed8;
+    --color-timelog-badge-non-billable-outline: #3b82f6;
+    --color-timelog-badge-non-billable-fg: #ffffff;
+    --color-timelog-badge-over-budget-fill: rgba(69, 10, 10, 0.4);
+    --color-timelog-badge-over-budget-outline: rgba(220, 38, 38, 0.8);
+
+    --color-tag-overlay-darken-percent: 45;
+    --color-lane-chip-tint-alpha: 0.14;
+    --color-lane-without-phase-border: #404040;
+    --color-lane-without-phase-fg: #d4d4d4;
+    --color-profile-role-swash: #71717a;
+    --color-permission-allowed: #4ade80;
+    --color-permission-blocked: #f87171;
+    --color-permission-conditional: #fbbf24;
+    --color-history-dot: var(--color-field-border);
+    --color-history-comment-text: #a6a6ad;
+}
+
+/* ─── Light theme overrides ─────────────────────────────────────────────── */
+[data-theme="pure-white"] {
+    --color-surface-canvas: #ffffff;
+    --color-chrome-top-bar: #0a0a0a;
+    --color-surface-panel: #ffffff;
+    --color-surface-detail-shell: #ffffff;
+    --color-surface-panel-hover: #f8fafc;
+    --color-surface-inset-well: #e2e8f0;
+    --color-board-lane-bg: #ffffff;
+    --color-board-column-outline: #ededed;
+    --color-divider-line: #404040;
+    --color-watermark-fill: #eaedf0;
+    --color-text-body: #0f172a;
+    --color-text-muted: #64748b;
+    --color-text-heading: #000000;
+    --color-accent-brand: #000000;
+    --color-accent-soft: #262626;
+    --color-accent-button-bg: #000000;
+    --color-accent-button-bg-hover: #262626;
+    --color-text-on-accent: #ffffff;
+    --color-nav-item-fg: #ffffff;
+    --color-nav-active-bg: #ffffff;
+    --color-nav-active-fg: #000000;
+    --color-nav-item-hover-bg: rgba(255, 255, 255, 0.1);
+    --color-status-badge-completed-fill: #16a34a;
+    --color-status-badge-completed-outline: #16a34a;
+    --color-status-badge-in-progress-fill: #266bea;
+    --color-status-badge-in-progress-outline: #266bea;
+    --color-status-badge-on-hold-fill: #dfba48;
+    --color-status-badge-on-hold-outline: #dfba48;
+    --color-status-badge-done-in-dev-fill: #0d9488;
+    --color-status-badge-done-in-dev-outline: #0d9488;
+    --color-status-badge-in-review-fill: #7c3aed;
+    --color-status-badge-in-review-outline: #7c3aed;
+    --color-status-badge-recurring-fill: #e9629e;
+    --color-status-badge-recurring-outline: #e9629e;
+    --color-status-badge-not-completed-fill: #000000;
+    --color-status-badge-not-completed-outline: #000000;
+    --color-priority-urgent: #ef4444;
+    --color-priority-highest: #b91c1c;
+    --color-priority-high: #dc2626;
+    --color-priority-medium: #d97706;
+    --color-priority-low: #2563eb;
+    --color-priority-lowest: #64748b;
+    --color-field-bg: #ffffff;
+    --color-field-border: #d1d9e0;
+    --color-field-focus: #2563eb;
+    --color-field-placeholder: #9ca3af;
+    --color-field-outline-strong: #000000;
+    --color-filter-select-selected-bg: #f2f3f4;
+    --color-chip-neutral-bg: #eaedf0;
+    --color-chip-neutral-border: #eaedf0;
+    --color-chip-neutral-hover-bg: #eaedf0;
+    --color-skeleton-block: #ebebeb;
+    --color-toolbar-filter-bg: #f6f8fa;
+    --color-toolbar-filter-hover: #eaedf0;
+    --color-control-disabled-border: #e9eef6;
+    --color-control-disabled-fg: #bcc9db;
+    --color-destructive-bg: #dc2626;
+    --color-destructive-border: #dc2626;
+    --color-destructive-hover: #b91c1c;
+    --color-destructive-fg: #ffffff;
+    --color-destructive-disabled-bg: #dc2626;
+    --color-destructive-disabled-border: #dc2626;
+    --color-destructive-disabled-fg: #ffffff;
+    --color-menu-option-hover-bg: #f2f3f4;
+    --color-chrome-hover-wash: #eaedf0;
+    --color-card-hover-outline: #404040;
+    --color-table-row-line: #e5e7eb;
+    --color-timeline-grid-line: #e0e0e0;
+    --color-timeline-selected-day-fill: #fcffc5;
+    --color-timeline-hover-day-fill: #d9d9d9;
+    --color-timeline-target-limit-line: #f7a35c;
+    --color-timeline-axis-text: #585858;
+    --color-timeline-tooltip-bg: #ffffff;
+    --color-timeline-tooltip-border: #585858;
+    --color-timeline-tooltip-text: #000000;
+    --color-timeline-tooltip-label-text: #000000;
+    --color-timeline-time-entries-btn-fg: #000000;
+    --color-timeline-billable: #43c86f;
+    --color-timeline-non-billable: #7798bf;
+    --color-timelog-badge-billable-fill: #43c86f;
+    --color-timelog-badge-billable-outline: #43c86f;
+    --color-timelog-badge-billable-fg: #ffffff;
+    --color-timelog-badge-non-billable-fill: #7798bf;
+    --color-timelog-badge-non-billable-outline: #7798bf;
+    --color-timelog-badge-non-billable-fg: #ffffff;
+    --color-timelog-badge-over-budget-fill: #ffffff;
+    --color-timelog-badge-over-budget-outline: #dc2626;
+    --color-segmented-track-bg: #ffffff;
+    --color-segmented-selected-bg: #000000;
+    --color-segmented-selected-fg: #ffffff;
+    --color-segmented-unselected-bg: #ffffff;
+    --color-markdown-bar-bg: #f6f8fa;
+    --color-markdown-tabs-active-bg: #eaedf0;
+    --color-markdown-tabs-active-fg: #0f172a;
+    --color-task-strip-badge-bg: #000000;
+    --color-task-strip-badge-fg: #ffffff;
+    --color-task-strip-badge-border: #000000;
+    --color-badge-icon-on-solid-fg: #ffffff;
+    --color-lane-without-phase-border: #d1d9e0;
+    --color-lane-without-phase-fg: #000000;
+    --color-tag-overlay-darken-percent: 0;
+    --color-lane-chip-tint-alpha: 1;
+    --color-profile-role-swash: #000000;
+    --color-permission-allowed: #15803d;
+    --color-permission-blocked: #b91c1c;
+    --color-permission-conditional: #b45309;
+}
+
+/* ─── Tailwind v4 semantic color tokens ─────────────────────────────────── */
+@theme {
+    --font-sans: 'Figtree', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+
+    --color-background: var(--color-surface-canvas);
+    --color-base: var(--color-chrome-top-bar);
+    --color-surface: var(--color-surface-panel);
+    --color-surface-detail: var(--color-surface-detail-shell);
+    --color-surface-hover: var(--color-surface-panel-hover);
+    --color-chrome-hover: var(--color-chrome-hover-wash);
+    --color-well: var(--color-surface-inset-well);
+    --color-board-lane: var(--color-board-lane-bg);
+    --color-board-column: var(--color-board-column-outline);
+
+    --color-primary: var(--color-accent-brand);
+    --color-primary-light: var(--color-accent-soft);
+    --color-primary-btn: var(--color-accent-button-bg);
+    --color-primary-btn-hover: var(--color-accent-button-bg-hover);
+    --color-on-primary: var(--color-text-on-accent);
+
+    --color-content: var(--color-text-body);
+    --color-content-muted: var(--color-text-muted);
+    --color-icon-emphasis: var(--color-text-heading);
+
+    --color-nav-fg: var(--color-nav-item-fg);
+    --color-nav-hover-bg: var(--color-nav-item-hover-bg);
+    /* nav-active-bg / nav-active-fg / dropdown-active-bg share their name with the
+     underlying raw vars — use direct values to avoid circular CSS var references */
+    --color-nav-active-bg: #1e1f21;
+    --color-nav-active-fg: #ffffff;
+    --color-dropdown-active-bg: #1e1f21;
+
+    --color-input: var(--color-field-bg);
+    --color-input-border: var(--color-field-border);
+    --color-input-ring: var(--color-field-focus);
+    --color-input-placeholder: var(--color-field-placeholder);
+    --color-input-selected-border: var(--color-field-outline-strong);
+    --color-filter-bg: var(--color-toolbar-filter-bg);
+    --color-filter-hover: var(--color-toolbar-filter-hover);
+    --color-filter-select-selected: var(--color-filter-select-selected-bg);
+
+    --color-meta-chip: var(--color-chip-neutral-bg);
+    --color-meta-chip-border: var(--color-chip-neutral-border);
+    --color-meta-chip-control-hover: var(--color-chip-neutral-hover-bg);
+
+    --color-segmented-track: var(--color-segmented-track-bg);
+    --color-segmented-active: var(--color-segmented-selected-bg);
+    --color-segmented-active-fg: var(--color-segmented-selected-fg);
+    --color-segmented-inactive: var(--color-segmented-unselected-bg);
+
+    --color-markdown-header: var(--color-markdown-bar-bg);
+    --color-markdown-segmented-active: var(--color-markdown-tabs-active-bg);
+    --color-markdown-segmented-active-fg: var(--color-markdown-tabs-active-fg);
+
+    --color-task-list-status-pill-bg: var(--color-task-strip-badge-bg);
+    --color-task-list-status-pill-fg: var(--color-task-strip-badge-fg);
+    --color-task-list-status-pill-border: var(--color-task-strip-badge-border);
+    --color-status-chip-label: var(--color-badge-icon-on-solid-fg);
+
+    --color-card-hover-border: var(--color-card-hover-outline);
+    --color-table-row-divider: var(--color-table-row-line);
+    --color-select-option-hover: var(--color-menu-option-hover-bg);
+    --color-cloud-bg: var(--color-watermark-fill);
+
+    /* Same-name conflicts — direct dark values */
+    --color-control-disabled-border: #39393e;
+    --color-control-disabled-fg: #71717a;
+    --color-history-dot: #3f3f46;
+    --color-history-comment-text: #a6a6ad;
+    --color-permission-allowed: #4ade80;
+    --color-permission-blocked: #f87171;
+    --color-permission-conditional: #fbbf24;
+
+    /* Priority — direct values to avoid circular self-references */
+    --color-priority-urgent: #ef4444;
+    --color-priority-highest: #c0392b;
+    --color-priority-high: #e07a6e;
+    --color-priority-medium: #d4a83d;
+    --color-priority-low: #5a9fd4;
+    --color-priority-lowest: #7a8a9a;
+
+    --color-danger-btn-bg: var(--color-destructive-bg);
+    --color-danger-btn-border: var(--color-destructive-border);
+    --color-danger-btn-hover: var(--color-destructive-hover);
+    --color-danger-btn-fg: var(--color-destructive-fg);
+
+    /* Override neutral shades as divider / skeleton shorthands */
+    --color-neutral-700: var(--color-divider-line);
+    --color-neutral-600: var(--color-divider-line);
+    --color-neutral-800: var(--color-skeleton-block);
+}
+
+/* ─── Global base ────────────────────────────────────────────────────────── */
+html,
+body {
+    background-color: var(--color-surface-canvas);
+    color: var(--color-text-body);
+    overscroll-behavior: none;
+}
+
+button:not([disabled]),
+a:not([disabled]) {
+    cursor: pointer;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #404040;
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #525252;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #404040 transparent;
+}
+
+/* ─── Date / time picker ─────────────────────────────────────────────────── */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+[data-theme="pure-white"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="pure-white"] input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: none;
+}
+
+/* ─── Checkbox ───────────────────────────────────────────────────────────── */
+input[type="checkbox"] {
+    accent-color: var(--color-accent-brand);
+}
+
+input[type="checkbox"].billable-checkbox {
+    appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.25rem;
+    border: 2px solid var(--color-field-border);
+    background-color: var(--color-field-bg);
+    cursor: pointer;
+    transition: border-color 150ms ease;
+}
+
+input[type="checkbox"].billable-checkbox:checked {
+    border-color: var(--color-accent-brand);
+    background-color: var(--color-accent-brand);
+}
+
+/* ─── Theme-switch: suppress transitions for one frame ──────────────────── */
+.no-theme-transitions * {
+    transition: none !important;
 }

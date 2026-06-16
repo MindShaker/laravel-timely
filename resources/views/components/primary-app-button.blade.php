@@ -1,3 +1,3 @@
-<button type="submit" style="cursor: pointer" class="text-gray-100 hover:text-yellow-400 border border-yellow-500 hover:bg-inherit focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium text-sm px-5 py-2.5 text-center dark:border-yellow-500 dark:hover:text-yellow-400 dark:hover:ring-yellow-600 bg-yellow-500">
+<button {{ $attributes->merge(['type' => 'submit', 'class' => 'inline-flex items-center rounded-md border border-primary bg-primary-btn px-4 py-2 text-xs font-semibold uppercase tracking-widest text-on-primary transition duration-150 ease-in-out hover:bg-primary-btn-hover hover:border-primary-btn-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface active:bg-primary-btn disabled:opacity-25']) }}>
     {{ $slot }}
 </button>

@@ -3,7 +3,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="flex flex-row-reverse h-10"></div>
 
-            <div class="bg-gray-800 overflow-hidden shadow-sm place-items-center">
+            <div class="bg-surface overflow-hidden shadow-sm place-items-center">
                 <div class="w-full p-6 text-gray-100 flex justify-between sm:flex flex-wrap">
 
                     <div>
@@ -12,7 +12,7 @@
                             <div class="flex justify-between sm:flex flex-wrap">
                                 <div>
                                     <select name="name"
-                                        class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-full p-2.5 placeholder-gray-400">
+                                        class="bg-input border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-full h-9 px-3 placeholder-gray-400">
                                         <option value="">SEARCH BY LOG OWNER</option>
                                         @foreach ($users->sortBy('name') as $user)
                                             <option value="{{ $user->name }}"
@@ -24,15 +24,15 @@
                                 </div>
 
                                 <div class ="ml-2">
-                                    <x-text-input type="month" name="month" value="{{ request('month') }}" />
+                                    <x-text-input type="month" name="month" value="{{ request('month') }}" class="h-9 px-3" />
                                 </div>
 
                                 <div class="lg:pl-2">
-                                    <x-secondary-app-button>SEARCH</x-secondary-app-button>
+                                    <x-secondary-app-button class="h-9">SEARCH</x-secondary-app-button>
                                 </div>
 
-                                <div class="py-2 ml-2">
-                                    <a href="{{ route('admin.adminlogs') }}">
+                                <div class="ml-2">
+                                    <a href="{{ route('admin.adminlogs') }}" class="inline-flex items-center justify-center h-9 px-3 text-content border border-neutral-700 rounded hover:bg-chrome-hover transition duration-150 ease-in-out">
                                         <x-refresh-icon />
                                     </a>
                                 </div>
@@ -116,8 +116,8 @@
                                                 <div tabindex="0"
                                                     class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                                                     <el-dialog-panel
-                                                        class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                                                        <div class="bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                                        class="relative transform overflow-hidden bg-surface text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                                                        <div class="bg-surface px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                                                             <div class="sm:flex sm:items-start">
                                                                 <div
                                                                     class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
@@ -221,8 +221,8 @@
                                                     <div tabindex="0"
                                                         class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                                                         <el-dialog-panel
-                                                            class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                                                            <div class="bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                                            class="relative transform overflow-hidden bg-surface text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                                                            <div class="bg-surface px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                                                                 <div class="sm:flex sm:items-start">
                                                                     <div
                                                                         class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">

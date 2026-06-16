@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full text-center bg-gray-800 p-8 shadow rounded-md">
+        <div class="max-w-md w-full text-center bg-surface p-8 shadow rounded-md">
             @if (isset($success) && $success)
                 <div
                     class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 dark:bg-green-900">

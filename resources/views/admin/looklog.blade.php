@@ -1,12 +1,12 @@
 <x-app-layout>
 
 
-    <div class="bg-gray-800 min-h-screen">
+    <div class="bg-surface min-h-screen">
         <div class="py-55">
             <div class="max-w-md mx-auto sm:px-4 lg:px-12">
 
                 <div
-                    class="max-w p-6 bg-gray-800 border border-yellow-400 shadow-sm text-center">
+                    class="max-w p-6 bg-surface border border-yellow-400 shadow-sm text-center">
 
                     <p class="mb-3 font-normal text-gray-400">Started at: {{ $print_time = date('H:i', strtotime($logs->entrada)) }}</p>
                     <p class="mb-3 font-normal text-gray-400">Left at: {{ $print_time = date('H:i', strtotime($logs->saida)) }}</p>

@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-md w-full text-center bg-gray-800 p-8 shadow rounded-md border border-gray-700">
+        <div class="max-w-md w-full text-center bg-surface p-8 shadow rounded-md border border-gray-700">
             
             <!-- Calendar Icon -->
             <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-blue-100 dark:bg-blue-900">
@@ -29,7 +29,7 @@
                     <div class="w-full">
                         <label for="year" class="block text-sm font-medium text-gray-400 mb-2">Select Year</label>
                         <select name="year" id="year" required
-                            class="w-full bg-gray-700 border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-yellow-500 focus:border-yellow-500 block p-2.5">
+                            class="w-full bg-input border border-gray-600 text-gray-100 text-sm rounded-lg focus:ring-yellow-500 focus:border-yellow-500 block p-2.5">
                             @forelse($availableYears as $year)
                                 <option value="{{ $year }}">{{ $year }}</option>
                             @empty

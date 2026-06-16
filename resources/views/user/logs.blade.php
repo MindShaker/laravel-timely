@@ -4,12 +4,12 @@
 
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-alerts />
-            <div class="flex flex-row-reverse">
+            <div class="flex flex-row-reverse mb-4">
                 <a href="{{ route('usercreatelogview', ['mode' => 'user']) }}">
                     <x-primary-app-button>ADD</x-primary-app-button>
                 </a>
             </div>
-            <div class="bg-gray-800 overflow-hidden shadow-sm">
+            <div class="bg-surface overflow-hidden shadow-sm">
 
                 <div class="w-full p-6 text-gray-100 flex justify-between sm:flex flex-wrap">
 
@@ -22,22 +22,22 @@
                                 <label for="table-search" class="sr-only">Search</label>
 
                                 <div class ="ml-2">
-                                    <x-text-input type="month" name="month" value="{{ request('month') }}" />
+                                    <x-text-input type="month" name="month" value="{{ request('month') }}" class="h-9 px-3" />
 
 
                                 </div>
                                 <div class ="ml-2">
                                     <input type="number" min="1" max="30" name="time" placeholder="DAY"
                                         value="{{ request('time') }}"
-                                        class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-500 focus:border-yellow-500 p-2.5 w-24 appearance-none placeholder-gray-400" />
+                                        class="bg-input border border-gray-600 text-gray-100 text-sm focus:ring-yellow-500 focus:border-yellow-500 h-9 px-3 w-24 appearance-none placeholder-gray-400" />
                                 </div>
 
 
                                 <div class="lg:pl-2">
-                                    <x-secondary-app-button> SEARCH </x-secondary-app-button>
+                                    <x-secondary-app-button class="h-9">SEARCH</x-secondary-app-button>
                                 </div>
-                                <div class="py-2">
-                                    <a href="/user/logs">
+                                <div class="ml-2">
+                                    <a href="/user/logs" class="inline-flex items-center justify-center h-9 px-3 text-content border border-neutral-700 rounded hover:bg-chrome-hover transition duration-150 ease-in-out">
                                         <x-refresh-icon />
                                     </a>
                                 </div>
@@ -57,15 +57,14 @@
 
                         <div>
                             <select id="" name ="format"
-                                class="bg-gray-700 border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-25 p-2.5 placeholder-gray-400">
+                                class="bg-input border border-gray-600 text-gray-100 text-sm focus:ring-yellow-400 focus:border-yellow-400 block w-25 h-9 px-3 placeholder-gray-400">
                                 <option value="xlsx">XLSX</option>
 
 
                             </select>
                         </div>
                         <div>
-                            <x-secondary-app-button><x-export-icon />
-                            </x-secondary-app-button>
+                            <x-secondary-app-button class="h-9"><x-export-icon /></x-secondary-app-button>
                         </div>
                     </div>
                 </form>
@@ -157,8 +156,8 @@
                                         <div tabindex="0"
                                             class="flex min-h-full items-end justify-center p-4 text-center focus:outline focus:outline-0 sm:items-center sm:p-0">
                                             <el-dialog-panel
-                                                class="relative transform overflow-hidden bg-gray-800 text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:max-w-lg data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95">
-                                                <div class="bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                                class="relative transform overflow-hidden bg-surface text-left shadow-xl outline outline-1 -outline-offset-1 outline-gray-900/10 transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:max-w-lg data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95">
+                                                <div class="bg-surface px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                                                     <div class="sm:flex sm:items-start">
 
                                                         <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">

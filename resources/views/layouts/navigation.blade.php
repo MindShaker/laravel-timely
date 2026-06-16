@@ -1,86 +1,76 @@
-<nav x-data="{ open: false }" class="bg-gray-800 border-b border-gray-700">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center text-gray-100">
-                    <a href="{{ route('home') }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-8">
-                            <path fill-rule="evenodd"
-                                d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7Z"
-                                clip-rule="evenodd" />
-                        </svg>
+<nav x-data="{ open: false }" class="overflow-visible bg-base border border-neutral-700 rounded-xl max-w-[1570px] mx-auto px-4 sm:px-6 lg:px-8 py-[3px] text-nav-fg">
+    <div class="flex h-14 justify-between">
 
-                    </a>
-                </div>
-
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('userlogs')" :active="request()->routeIs('userlogs')">
-                        {{ __('My Logs') }}
-                    </x-nav-link>
-                    @if (Auth::user()->tipo == 'admin')
-                        <x-nav-link :href="route('adminlogs')" :active="request()->routeIs('adminlogs')">
-                            {{ __('Manage Logs') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.adminlogs')" :active="request()->routeIs('admin.adminlogs')">
-                     {{ __('Admin Logs') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('userlist')" :active="request()->routeIs('userlist')">
-                            {{ __(' Manage Users') }}
-                        </x-nav-link>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Settings Dropdown -->
-                <div class="hidden sm:flex sm:items-center lg :ms-6 ">
-                <div class="flex flex-row">
-                    <div class="flex text-gray-100">
-                        <a href="{{ route('profile.edit') }}" class="">
-                            {{ Auth::user()->name }}</a>
-                    </div>
-                    <div class="flex text-gray-100">
-                        <div>
-                            <a href="{{ route('profile.edit') }}" class="">
-                            </a>
-                        </div>
-                        <div class="py-1">
-                            <a href="{{ route('profile.edit') }}" class="">
-                                <x-pencil-icon />
-                            </a>
-                        </div>
-
-
-                    </div>
-                </div>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden text-gray-100">
-                <a href="{{ route('profile.edit') }}">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        <!-- Left: logo + nav links -->
+        <div class="flex gap-0">
+            <div class="flex items-center pl-5 pr-5 rounded-l-xl bg-base">
+                <a href="{{ route('home') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-8">
+                        <path fill-rule="evenodd"
+                            d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7Z"
+                            clip-rule="evenodd" />
                     </svg>
                 </a>
             </div>
+
+            <div class="hidden sm:flex items-center gap-1">
+                <x-nav-link :href="route('userlogs')" :active="request()->routeIs('userlogs')">
+                    {{ __('My Logs') }}
+                </x-nav-link>
+                @if (Auth::user()->tipo == 'admin')
+                    <x-nav-link :href="route('adminlogs')" :active="request()->routeIs('adminlogs')">
+                        {{ __('Manage Logs') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('admin.adminlogs')" :active="request()->routeIs('admin.adminlogs')">
+                        {{ __('Admin Logs') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('userlist')" :active="request()->routeIs('userlist')">
+                        {{ __('Manage Users') }}
+                    </x-nav-link>
+                @endif
+            </div>
+        </div>
+
+        <!-- Right: user link + mobile menu -->
+        <div class="flex items-center gap-2 pl-3 pr-4 rounded-r-xl bg-base">
+            <div class="hidden sm:flex items-center gap-3">
+                <a href="{{ route('profile.edit') }}" class="text-sm font-medium text-nav-fg hover:text-primary transition duration-150 ease-in-out">
+                    {{ Auth::user()->name }}
+                </a>
+                <a href="{{ route('profile.edit') }}" class="text-nav-fg hover:text-primary transition duration-150 ease-in-out">
+                    <x-pencil-icon />
+                </a>
+            </div>
+
+            <!-- Hamburger -->
+            <button @click="open = ! open" class="sm:hidden p-2 rounded-lg text-nav-fg hover:bg-nav-hover-bg transition duration-150 ease-in-out">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+            </button>
         </div>
     </div>
 
-    <!-- Authentication
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
-                </form> -->
-
-
+    <!-- Mobile menu -->
+    <div x-show="open" class="sm:hidden border-t border-neutral-700 py-2">
+        <div class="flex flex-col gap-1 pb-1">
+            <x-nav-link :href="route('userlogs')" :active="request()->routeIs('userlogs')">
+                {{ __('My Logs') }}
+            </x-nav-link>
+            @if (Auth::user()->tipo == 'admin')
+                <x-nav-link :href="route('adminlogs')" :active="request()->routeIs('adminlogs')">
+                    {{ __('Manage Logs') }}
+                </x-nav-link>
+                <x-nav-link :href="route('admin.adminlogs')" :active="request()->routeIs('admin.adminlogs')">
+                    {{ __('Admin Logs') }}
+                </x-nav-link>
+                <x-nav-link :href="route('userlist')" :active="request()->routeIs('userlist')">
+                    {{ __('Manage Users') }}
+                </x-nav-link>
+            @endif
+            <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')">
+                {{ __('Profile') }}
+            </x-nav-link>
+        </div>
+    </div>
 </nav>
