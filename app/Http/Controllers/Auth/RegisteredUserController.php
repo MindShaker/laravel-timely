@@ -36,17 +36,19 @@ class RegisteredUserController extends Controller
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'tipo'=>"user",
-            'inicio_almoco'=>"13:00:00",
+            'name'          => $request->name,
+            'email'         => $request->email,
+            'password'      => Hash::make($request->password),
+            'tipo'          => 'user',
+            'inicio_almoco' => '13:00',
+            'hora_entrada'  => '09:00',
+            'hora_saida'    => '18:00',
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        return redirect(route('calendar', absolute: false));
     }
 }

@@ -57,24 +57,8 @@
             <x-input-error class="mt-2" :messages="$errors->get('inicio_almoco')" />
         </div>
  
-        <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div>
-                <x-input-label for="notifications" :value="__('Email Notifications')" />
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Receive email updates.') }}</p>
-            </div>
-            <div class="flex items-center gap-3">
-    <input
-        type="checkbox"
-        id="notifications"
-        name="notifications"
-        value="1"
-        class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 accent-green-600 cursor-pointer"
-        {{ old('notifications', $user->notifications) ? 'checked' : '' }}
-    >
-    
-</div>
-</div>
- 
+
+
         <div class="flex items-center gap-4">
             <x-secondary-app-button>{{ __('SAVE') }}</x-secondary-app-button>
  
