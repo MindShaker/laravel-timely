@@ -128,8 +128,7 @@
                             <div class="flex items-center gap-2 text-xs">
                                 <span class="size-2 rounded-sm shrink-0" style="background:{{ $cfg['color'] }}"></span>
                                 <span class="text-content-muted flex-1 leading-none">{{ $cfg['label'] }}</span>
-                                <span class="font-medium text-content tabular-nums">{{ $month['types'][$type]['days'] }} /
-                                    {{ count($month['types'][$type]['people']) }}p</span>
+                                <span class="font-medium text-content tabular-nums">{{ $month['types'][$type]['days'] }}d / {{ count($month['types'][$type]['people']) }}p</span>
                             </div>
                         @endif
                     @endforeach

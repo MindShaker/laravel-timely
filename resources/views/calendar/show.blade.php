@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between flex-wrap gap-3">
             <div class="flex items-center gap-3">
-                <a href="{{ route('calendar.month', [$prevMonth->year, $prevMonth->month]) }}{{ $showAll ? '?all=1' : '' }}"
+                <a href="{{ route('calendar.month', [$prevMonth->year, $prevMonth->month]) }}"
                     class="p-1.5 rounded-lg hover:bg-surface-hover text-content-muted hover:text-content transition">
                     <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
@@ -11,7 +11,7 @@
                 <h2 class="text-lg font-semibold text-content capitalize text-center w-44">
                     {{ $monthNames[$month] }} {{ $year }}
                 </h2>
-                <a href="{{ route('calendar.month', [$nextMonth->year, $nextMonth->month]) }}{{ $showAll ? '?all=1' : '' }}"
+                <a href="{{ route('calendar.month', [$nextMonth->year, $nextMonth->month]) }}"
                     class="p-1.5 rounded-lg hover:bg-surface-hover text-content-muted hover:text-content transition">
                     <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
@@ -19,15 +19,11 @@
                 </a>
             </div>
 
-            {{-- Eu / Todos / Anual toggle --}}
+            {{-- View toggle --}}
             <div class="flex rounded-lg border border-neutral-700 overflow-hidden text-sm">
                 <a href="{{ route('calendar.month', [$year, $month]) }}"
-                    class="{{ !$showAll ? 'bg-surface-hover text-content font-medium' : 'text-content-muted hover:text-content' }} px-3 py-1.5 transition">
-                    Eu
-                </a>
-                <a href="{{ route('calendar.month', [$year, $month]) }}?all=1"
-                    class="{{ $showAll ? 'bg-surface-hover text-content font-medium' : 'text-content-muted hover:text-content' }} px-3 py-1.5 border-l border-neutral-700 transition">
-                    Todos
+                    class="bg-surface-hover text-content font-medium px-3 py-1.5 transition">
+                    Mensal
                 </a>
                 <a href="{{ route('calendar.overview', $year) }}"
                     class="text-content-muted hover:text-content px-3 py-1.5 border-l border-neutral-700 transition">
@@ -123,6 +119,52 @@
                 <span :class="!filters['{{ $t }}'] ? 'line-through' : ''">{{ $label }}</span>
             </button>
             @endforeach
+
+            @if (!empty($teamMembers))
+            <div class="border-t border-neutral-800 my-4"></div>
+            <p class="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest px-1 mb-2">Pessoas</p>
+
+            {{-- Todos --}}
+            <button @click="toggleAll()"
+                    class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm transition-all text-left mb-0.5"
+                    :class="allSelected ? 'text-content' : 'text-content-muted hover:text-content hover:bg-surface-hover'">
+                <span class="size-4 rounded border flex items-center justify-center shrink-0 transition-all"
+                      :class="allSelected ? 'bg-neutral-500 border-neutral-500' : 'border-neutral-600'">
+                    <svg x-show="allSelected" class="size-2.5" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round">
+                        <path d="M1.5 5L4 7.5L8.5 2"/>
+                    </svg>
+                </span>
+                Todos
+            </button>
+
+            {{-- Eu --}}
+            <button @click="selectedPeople[{{ $user->id }}] = !selectedPeople[{{ $user->id }}]"
+                    class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm transition-all text-left mb-0.5"
+                    :class="selectedPeople[{{ $user->id }}] ? 'text-content' : 'text-content-muted hover:text-content hover:bg-surface-hover'">
+                <span class="size-4 rounded border flex items-center justify-center shrink-0 transition-all"
+                      :class="selectedPeople[{{ $user->id }}] ? 'bg-neutral-500 border-neutral-500' : 'border-neutral-600'">
+                    <svg x-show="selectedPeople[{{ $user->id }}]" class="size-2.5" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round">
+                        <path d="M1.5 5L4 7.5L8.5 2"/>
+                    </svg>
+                </span>
+                Eu
+            </button>
+
+            {{-- Team members --}}
+            @foreach ($teamMembers as $member)
+            <button @click="selectedPeople[{{ $member['id'] }}] = !selectedPeople[{{ $member['id'] }}]"
+                    class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm transition-all text-left mb-0.5"
+                    :class="selectedPeople[{{ $member['id'] }}] ? 'text-content' : 'text-content-muted hover:text-content hover:bg-surface-hover'">
+                <span class="size-4 rounded border flex items-center justify-center shrink-0 transition-all"
+                      :class="selectedPeople[{{ $member['id'] }}] ? 'bg-neutral-500 border-neutral-500' : 'border-neutral-600'">
+                    <svg x-show="selectedPeople[{{ $member['id'] }}]" class="size-2.5" viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round">
+                        <path d="M1.5 5L4 7.5L8.5 2"/>
+                    </svg>
+                </span>
+                {{ $member['name'] }}
+            </button>
+            @endforeach
+            @endif
         </aside>
 
         {{-- Calendar --}}
@@ -187,7 +229,7 @@
                         <div class="flex flex-wrap gap-1 justify-center mt-1 px-1">
                             @foreach ($othersStatus[$date] as $other)
                                 @php $bs = $badgeStyles[$other['type']] ?? $badgeStyles['undefined']; @endphp
-                                <span x-show="filters['{{ $other['type'] }}']"
+                                <span x-show="filters['{{ $other['type'] }}'] && selectedPeople[{{ $other['user_id'] }}]"
                                     class="text-[11px] px-1.5 py-0.5 rounded font-semibold leading-none {{ $bs['bg'] }} {{ $bs['text'] }} {{ $other['remote'] ? 'border border-dashed border-current' : '' }}"
                                     title="{{ $other['name'] }}">{{ $other['initials'] }}</span>
                             @endforeach
@@ -224,7 +266,8 @@
                                         <p class="text-[10px] font-medium text-neutral-500 uppercase tracking-wide mb-1 mt-2 first:mt-0">{{ $typeLabels[$type] ?? $type }}</p>
                                         @foreach ($people as $other)
                                             @php $bs = $badgeStyles[$type] ?? $badgeStyles['undefined']; @endphp
-                                            <div class="flex items-center gap-1.5 py-0.5">
+                                            <div class="flex items-center gap-1.5 py-0.5"
+                                                x-show="selectedPeople[{{ $other['user_id'] }}]">
                                                 <span class="text-[10px] px-1.5 py-0.5 rounded font-semibold leading-none shrink-0 {{ $bs['bg'] }} {{ $bs['text'] }} {{ $other['remote'] ? 'border border-dashed border-current' : '' }}">{{ $other['initials'] }}</span>
                                                 <span class="text-xs text-content">{{ $other['name'] }}{{ $other['remote'] ? ' 🏠' : '' }}</span>
                                             </div>
@@ -269,7 +312,10 @@
             dragStartType: null,
             markType:      'vacation',
             markRemote:    false,
-            filters:       { vacation: true, client: true, internal: true, undefined: true, training: true, absent: true },
+            filters:        { vacation: true, client: true, internal: true, undefined: true, training: true, absent: true },
+            currentUserId:  {{ $user->id }},
+            selectedPeople: { {{ $user->id }}: true },
+            allPeopleIds:   [{{ $user->id }}{{ !empty($teamMembers) ? ', ' . collect($teamMembers)->pluck('id')->implode(', ') : '' }}],
             _statusIndex:  {},
 
             init() {
@@ -279,6 +325,15 @@
 
             _rebuildIndex() {
                 this._statusIndex = Object.fromEntries(this.statusDays.map(s => [s.date, s]));
+            },
+
+            get allSelected() {
+                return this.allPeopleIds.every(id => this.selectedPeople[id]);
+            },
+
+            toggleAll() {
+                const select = !this.allSelected;
+                this.allPeopleIds.forEach(id => { this.selectedPeople[id] = select; });
             },
 
             _typeColors: {
@@ -328,7 +383,7 @@
                     return `background-color:${c.pbg};border-color:${c.pbd};border-style:${bs}`;
                 }
                 const entry = this._statusIndex[date];
-                if (entry && this.filters[entry.type]) {
+                if (entry && this.filters[entry.type] && this.selectedPeople[this.currentUserId]) {
                     const c  = this._typeColors[entry.type];
                     const bs = entry.remote ? 'dashed' : 'solid';
                     return `background-color:${c.bg};border-color:${c.bd};border-style:${bs};color:white`;

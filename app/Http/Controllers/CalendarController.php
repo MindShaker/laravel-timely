@@ -12,12 +12,12 @@ use Illuminate\Support\Facades\Auth;
 
 class CalendarController extends Controller
 {
-    public function show(Request $request, int $year = null, int $month = null)
+    public function show(int $year = null, int $month = null)
     {
         $year  = $year  ?? now()->year;
         $month = $month ?? now()->month;
 
-        return $this->buildCalendarView(Auth::user(), $year, $month, 'calendar.show', $request->boolean('all'));
+        return $this->buildCalendarView(Auth::user(), $year, $month, 'calendar.show', true);
     }
 
     public function adminShow(User $user, int $year = null, int $month = null)
@@ -177,9 +177,10 @@ class CalendarController extends Controller
             ->count();
         $vacationAllowance = 22;
 
-        // Other users' statuses for the month (date => [{name, initials, type, remote}])
+        // Other users' statuses for the month (date => [{user_id, name, initials, type, remote}])
         $othersStatus    = [];
         $othersBirthdays = [];
+        $teamMembers     = [];
         if ($showAll) {
             Absence::with('user')
                 ->whereIn('type', ['vacation', 'client', 'internal', 'undefined', 'training', 'absent'])
@@ -189,12 +190,19 @@ class CalendarController extends Controller
                 ->get()
                 ->each(function ($absence) use (&$othersStatus) {
                     $othersStatus[$absence->date->format('Y-m-d')][] = [
+                        'user_id'  => $absence->user_id,
                         'name'     => $absence->user->name,
                         'initials' => $this->initials($absence->user->name),
                         'type'     => $absence->type,
                         'remote'   => (bool) $absence->remote,
                     ];
                 });
+
+            $teamMembers = User::where('id', '!=', $user->id)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn($u) => ['id' => $u->id, 'name' => $u->name])
+                ->toArray();
 
             User::where('id', '!=', $user->id)
                 ->whereNotNull('birthdate')
@@ -224,7 +232,7 @@ class CalendarController extends Controller
             'vacationCount', 'holidayCount', 'workedDays',
             'yearVacationCount', 'vacationAllowance',
             'prevMonth', 'nextMonth', 'monthNames',
-            'showAll', 'othersStatus', 'othersBirthdays'
+            'showAll', 'othersStatus', 'othersBirthdays', 'teamMembers'
         ));
     }
 
