@@ -21,6 +21,9 @@
                     <x-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users*')">
                         {{ __('Utilizadores') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('admin.holidays', now()->year)" :active="request()->routeIs('admin.holidays*')">
+                        {{ __('Feriados') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('admin.export')" :active="request()->routeIs('admin.export*')">
                         {{ __('Exportar') }}
                     </x-nav-link>
@@ -57,6 +60,9 @@
             @if (Auth::user()->tipo === 'admin')
                 <x-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users*')">
                     {{ __('Utilizadores') }}
+                </x-nav-link>
+                <x-nav-link :href="route('admin.holidays', now()->year)" :active="request()->routeIs('admin.holidays*')">
+                    {{ __('Feriados') }}
                 </x-nav-link>
                 <x-nav-link :href="route('admin.export')" :active="request()->routeIs('admin.export*')">
                     {{ __('Exportar') }}

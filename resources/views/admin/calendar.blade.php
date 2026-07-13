@@ -56,10 +56,12 @@
             <p class="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest px-1 mb-2">Marcar como</p>
 
             @foreach([
-                ['vacation', 'Férias',     '#5c430a', '#d39a11'],
-                ['client',   'Cliente',    '#052e16', '#15803d'],
+                ['vacation', 'Férias',     '#164e63', '#22d3ee'],
+                ['client',   'Cliente',    '#14532d', '#22c55e'],
                 ['internal', 'Interno',    '#172554', '#1d4ed8'],
-                ['undefined','Disponível', '#431407', '#ea580c'],
+                ['undefined','Disponível', '#7c2d12', '#f97316'],
+                ['training', 'Formação',   '#3b0764', '#a855f7'],
+                ['absent',   'Ausente',    '#4c0519', '#f43f5e'],
             ] as [$t, $label, $bg, $bd])
             <button @click="markType = '{{ $t }}'"
                     class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm font-medium transition-all text-left mb-0.5"
@@ -85,10 +87,12 @@
             <p class="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest px-1 mb-2">Mostrar</p>
 
             @foreach([
-                ['vacation', 'Férias',     '#d39a11'],
-                ['client',   'Cliente',    '#15803d'],
+                ['vacation', 'Férias',     '#22d3ee'],
+                ['client',   'Cliente',    '#22c55e'],
                 ['internal', 'Interno',    '#1d4ed8'],
-                ['undefined','Disponível', '#ea580c'],
+                ['undefined','Disponível', '#f97316'],
+                ['training', 'Formação',   '#a855f7'],
+                ['absent',   'Ausente',    '#f43f5e'],
             ] as [$t, $label, $bd])
             <button @click="filters['{{ $t }}'] = !filters['{{ $t }}']"
                     class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm transition-all text-left mb-0.5"
@@ -166,7 +170,7 @@
             dragStartType: null,
             markType:      'vacation',
             markRemote:    false,
-            filters:       { vacation: true, client: true, internal: true, undefined: true },
+            filters:       { vacation: true, client: true, internal: true, undefined: true, training: true, absent: true },
             _statusIndex:  {},
 
             init() {
@@ -179,10 +183,12 @@
             },
 
             _typeColors: {
-                vacation: { bg: '#5c430a', bd: '#d39a11', pbg: 'rgba(92,67,10,0.55)',  pbd: 'rgba(211,154,17,0.6)' },
-                client:   { bg: '#052e16', bd: '#15803d', pbg: 'rgba(5,46,22,0.55)',   pbd: 'rgba(21,128,61,0.6)'  },
-                internal: { bg: '#172554', bd: '#1d4ed8', pbg: 'rgba(23,37,84,0.55)',  pbd: 'rgba(29,78,216,0.6)'  },
-                undefined:{ bg: '#431407', bd: '#ea580c', pbg: 'rgba(67,20,7,0.55)',   pbd: 'rgba(234,88,12,0.6)'  },
+                vacation: { bg: '#164e63', bd: '#22d3ee', pbg: 'rgba(22,78,99,0.55)',    pbd: 'rgba(34,211,238,0.6)' },
+                client:   { bg: '#14532d', bd: '#22c55e', pbg: 'rgba(20,83,45,0.55)',   pbd: 'rgba(34,197,94,0.6)'  },
+                internal: { bg: '#172554', bd: '#1d4ed8', pbg: 'rgba(23,37,84,0.55)',   pbd: 'rgba(29,78,216,0.6)'  },
+                undefined:{ bg: '#7c2d12', bd: '#f97316', pbg: 'rgba(124,45,18,0.55)',  pbd: 'rgba(249,115,22,0.6)' },
+                training: { bg: '#3b0764', bd: '#a855f7', pbg: 'rgba(59,7,100,0.55)',   pbd: 'rgba(168,85,247,0.6)' },
+                absent:   { bg: '#4c0519', bd: '#f43f5e', pbg: 'rgba(76,5,25,0.55)',    pbd: 'rgba(244,63,94,0.6)'  },
             },
 
             get preview() {

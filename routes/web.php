@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminHolidayController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ProfileController;
@@ -22,7 +23,8 @@ Route::middleware('auth')->group(function () {
 
     // Calendar — user's own
     Route::get('/calendar',                    [CalendarController::class, 'show'])->name('calendar');
-    Route::get('/calendar/{year}/{month}',     [CalendarController::class, 'show'])->name('calendar.month');
+    Route::get('/calendar/{year}/overview',    [CalendarController::class, 'yearOverview'])->name('calendar.overview')->where('year', '\d{4}');
+    Route::get('/calendar/{year}/{month}',     [CalendarController::class, 'show'])->name('calendar.month')->where(['year' => '\d{4}', 'month' => '\d{1,2}']);
     Route::post('/calendar/range',             [CalendarController::class, 'markRange'])->name('calendar.range');
     Route::delete('/calendar/range',           [CalendarController::class, 'removeRange'])->name('calendar.removeRange');
     Route::delete('/calendar/{date}',          [CalendarController::class, 'remove'])->name('calendar.remove')
@@ -46,6 +48,13 @@ Route::middleware('auth')->group(function () {
         Route::delete('/calendar/{user}/range',          [CalendarController::class, 'adminRemoveRange'])->name('admin.calendar.removeRange');
         Route::delete('/calendar/{user}/{date}',          [CalendarController::class, 'adminRemove'])->name('admin.calendar.remove')
             ->where('date', '\d{4}-\d{2}-\d{2}');
+
+        // Holidays
+        Route::get('/holidays/{year?}',      [AdminHolidayController::class, 'index'])->name('admin.holidays')->where('year', '\d{4}');
+        Route::post('/holidays/sync/{year}', [AdminHolidayController::class, 'sync'])->name('admin.holidays.sync')->where('year', '\d{4}');
+        Route::post('/holidays',             [AdminHolidayController::class, 'store'])->name('admin.holidays.store');
+        Route::patch('/holidays/{holiday}',  [AdminHolidayController::class, 'update'])->name('admin.holidays.update');
+        Route::delete('/holidays/{holiday}', [AdminHolidayController::class, 'destroy'])->name('admin.holidays.destroy');
 
         // Export
         Route::get('/export',          [ExportController::class, 'index'])->name('admin.export');

@@ -251,25 +251,9 @@ class ExportController extends Controller
 
     private function getPortugueseHolidayDates(int $year): array
     {
-        $easter        = Carbon::create($year, 3, 21)->addDays(easter_days($year));
-        $goodFriday    = $easter->copy()->subDays(2)->format('Y-m-d');
-        $corpusChristi = $easter->copy()->addDays(60)->format('Y-m-d');
-
-        $fixed = [
-            "{$year}-01-01" => 'Ano Novo',
-            "{$year}-04-25" => 'Dia da Liberdade',
-            "{$year}-05-01" => 'Dia do Trabalhador',
-            "{$year}-06-10" => 'Dia de Portugal',
-            "{$year}-08-15" => 'Assunção de Nossa Senhora',
-            "{$year}-10-05" => 'Implantação da República',
-            "{$year}-11-01" => 'Dia de Todos os Santos',
-            "{$year}-12-01" => 'Restauração da Independência',
-            "{$year}-12-08" => 'Imaculada Conceição',
-            "{$year}-12-25" => 'Natal',
-            $goodFriday     => 'Sexta-feira Santa',
-            $corpusChristi  => 'Corpo de Deus',
-        ];
-
-        return $fixed;
+        return \App\Models\Holiday::whereYear('date', $year)
+            ->get()
+            ->mapWithKeys(fn($h) => [$h->date->format('Y-m-d') => $h->name])
+            ->toArray();
     }
 }

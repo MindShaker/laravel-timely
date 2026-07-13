@@ -33,7 +33,7 @@ class CalendarController extends Controller
         $request->validate([
             'start'  => 'required|date_format:Y-m-d',
             'end'    => 'required|date_format:Y-m-d',
-            'type'   => 'required|in:vacation,client,internal,undefined',
+            'type'   => 'required|in:vacation,client,internal,undefined,training,absent',
             'remote' => 'boolean',
         ]);
 
@@ -46,7 +46,7 @@ class CalendarController extends Controller
         $request->validate([
             'start'  => 'required|date_format:Y-m-d',
             'end'    => 'required|date_format:Y-m-d',
-            'type'   => 'required|in:vacation,client,internal,undefined',
+            'type'   => 'required|in:vacation,client,internal,undefined,training,absent',
             'remote' => 'boolean',
         ]);
 
@@ -69,7 +69,7 @@ class CalendarController extends Controller
         $request->validate([
             'start' => 'required|date_format:Y-m-d',
             'end'   => 'required|date_format:Y-m-d',
-            'type'  => 'required|in:vacation,client,internal,undefined',
+            'type'  => 'required|in:vacation,client,internal,undefined,training,absent',
         ]);
 
         return $this->deleteDateRange(Auth::user(), $request->start, $request->end, $request->type);
@@ -80,10 +80,50 @@ class CalendarController extends Controller
         $request->validate([
             'start' => 'required|date_format:Y-m-d',
             'end'   => 'required|date_format:Y-m-d',
-            'type'  => 'required|in:vacation,client,internal,undefined',
+            'type'  => 'required|in:vacation,client,internal,undefined,training,absent',
         ]);
 
         return $this->deleteDateRange($user, $request->start, $request->end, $request->type);
+    }
+
+    public function yearOverview(int $year)
+    {
+        $types = ['vacation', 'client', 'internal', 'undefined', 'training', 'absent'];
+
+        $absences = Absence::with('user')
+            ->whereYear('date', $year)
+            ->whereIn('type', $types)
+            ->get();
+
+        $months = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $months[$m] = [
+                'types' => array_fill_keys($types, ['days' => 0, 'people' => []]),
+                'total' => 0,
+            ];
+        }
+
+        $yearTotals = array_fill_keys($types, ['days' => 0, 'people' => []]);
+
+        foreach ($absences as $absence) {
+            $m    = $absence->date->month;
+            $type = $absence->type;
+
+            $months[$m]['types'][$type]['days']++;
+            $months[$m]['types'][$type]['people'][$absence->user_id] = $absence->user->name;
+            $months[$m]['total']++;
+
+            $yearTotals[$type]['days']++;
+            $yearTotals[$type]['people'][$absence->user_id] = true;
+        }
+
+        $monthNames = [
+            1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março',    4 => 'Abril',
+            5 => 'Maio',    6 => 'Junho',     7 => 'Julho',     8 => 'Agosto',
+            9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro',
+        ];
+
+        return view('calendar.overview', compact('year', 'months', 'monthNames', 'yearTotals'));
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -142,7 +182,7 @@ class CalendarController extends Controller
         $othersBirthdays = [];
         if ($showAll) {
             Absence::with('user')
-                ->whereIn('type', ['vacation', 'client', 'internal', 'undefined'])
+                ->whereIn('type', ['vacation', 'client', 'internal', 'undefined', 'training', 'absent'])
                 ->where('user_id', '!=', $user->id)
                 ->whereYear('date', $year)
                 ->whereMonth('date', $month)
@@ -250,7 +290,7 @@ class CalendarController extends Controller
     private function yearStatusDays(User $user, int $year): array
     {
         return Absence::where('user_id', $user->id)
-            ->whereIn('type', ['vacation', 'client', 'internal', 'undefined'])
+            ->whereIn('type', ['vacation', 'client', 'internal', 'undefined', 'training', 'absent'])
             ->whereYear('date', $year)
             ->get()
             ->map(fn($a) => [
