@@ -1,11 +1,9 @@
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
-@import 'flowbite';
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
+@source '../views/app.blade.php';
 @source '../**/*.js';
-@source "../node_modules/flowbite-datepicker";
+@source '../**/*.vue';
 
 /* ─── Design tokens — Dark theme (default) ──────────────────────────────── */
 :root {

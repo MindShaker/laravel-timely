@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
     // Calendar — user's own
     Route::get('/calendar',                    [CalendarController::class, 'show'])->name('calendar');
     Route::get('/calendar/{year}/overview',    [CalendarController::class, 'yearOverview'])->name('calendar.overview')->where('year', '\d{4}');
+    Route::get('/calendar/week/{year?}/{week?}', [CalendarController::class, 'week'])->name('calendar.week')->where(['year' => '\d{4}', 'week' => '\d{1,2}']);
     Route::get('/calendar/{year}/{month}',     [CalendarController::class, 'show'])->name('calendar.month')->where(['year' => '\d{4}', 'month' => '\d{1,2}']);
     Route::post('/calendar/range',             [CalendarController::class, 'markRange'])->name('calendar.range');
     Route::delete('/calendar/range',           [CalendarController::class, 'removeRange'])->name('calendar.removeRange');

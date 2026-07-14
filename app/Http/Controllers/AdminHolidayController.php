@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Holiday;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Inertia\Inertia;
 
 class AdminHolidayController extends Controller
 {
@@ -13,9 +14,14 @@ class AdminHolidayController extends Controller
         $year     = $year ?? now()->year;
         $holidays = Holiday::whereYear('date', $year)
             ->orderBy('date')
-            ->get();
+            ->get()
+            ->map(fn ($h) => [
+                'id'             => $h->id,
+                'name'           => $h->name,
+                'date_formatted' => $h->date->format('d M'),
+            ]);
 
-        return view('admin.holidays', compact('year', 'holidays'));
+        return Inertia::render('Admin/Holidays/Index', compact('year', 'holidays'));
     }
 
     public function sync(int $year)

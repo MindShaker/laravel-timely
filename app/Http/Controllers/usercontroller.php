@@ -5,18 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::orderBy('name')->get();
-        return view('admin.users', compact('users'));
+        $users = User::orderBy('name')->get()->map(fn ($u) => [
+            'id'            => $u->id,
+            'name'          => $u->name,
+            'email'         => $u->email,
+            'tipo'          => $u->tipo,
+            'hora_entrada'  => $u->hora_entrada,
+            'hora_saida'    => $u->hora_saida,
+            'inicio_almoco' => $u->inicio_almoco,
+            'birthdate_formatted' => $u->birthdate ? $u->birthdate->format('d/m') : null,
+        ]);
+
+        return Inertia::render('Admin/Users/Index', compact('users'));
     }
 
     public function create()
     {
-        return view('admin.user-form');
+        return Inertia::render('Admin/Users/Form');
     }
 
     public function store(Request $request)
@@ -40,7 +51,18 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        return view('admin.user-form', compact('user'));
+        return Inertia::render('Admin/Users/Form', [
+            'user' => [
+                'id'            => $user->id,
+                'name'          => $user->name,
+                'email'         => $user->email,
+                'tipo'          => $user->tipo,
+                'hora_entrada'  => $user->hora_entrada,
+                'hora_saida'    => $user->hora_saida,
+                'inicio_almoco' => $user->inicio_almoco,
+                'birthdate_raw' => $user->birthdate ? $user->birthdate->format('Y-m-d') : '',
+            ],
+        ]);
     }
 
     public function update(Request $request, User $user)

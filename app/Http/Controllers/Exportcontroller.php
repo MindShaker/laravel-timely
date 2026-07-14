@@ -29,8 +29,8 @@ class ExportController extends Controller
 
     public function index()
     {
-        $users = User::orderBy('name')->get();
-        return view('admin.export', compact('users'));
+        $users = User::orderBy('name')->get(['id', 'name']);
+        return \Inertia\Inertia::render('Admin/Export/Index', compact('users'));
     }
 
     public function download(Request $request)

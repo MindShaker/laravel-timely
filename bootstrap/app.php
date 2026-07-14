@@ -11,15 +11,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
         $middleware->validateCsrfTokens(except: [
-            'esp32/*', 
+            'esp32/*',
+        ]);
+        $middleware->alias([
+            'is_admin' => \App\Http\Middleware\IsAdmin::class,
         ]);
     })
-    ->withMiddleware(function (Middleware $middleware) {
-    $middleware->alias([
-        'is_admin' => 'App\\Http\\Middleware\\IsAdmin',
-    ]);
-})
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

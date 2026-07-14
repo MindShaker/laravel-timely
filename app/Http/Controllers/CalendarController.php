@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class CalendarController extends Controller
 {
@@ -17,7 +18,7 @@ class CalendarController extends Controller
         $year  = $year  ?? now()->year;
         $month = $month ?? now()->month;
 
-        return $this->buildCalendarView(Auth::user(), $year, $month, 'calendar.show', true);
+        return Inertia::render('Calendar/Show', $this->buildCalendarProps(Auth::user(), $year, $month, true));
     }
 
     public function adminShow(User $user, int $year = null, int $month = null)
@@ -25,7 +26,7 @@ class CalendarController extends Controller
         $year  = $year  ?? now()->year;
         $month = $month ?? now()->month;
 
-        return $this->buildCalendarView($user, $year, $month, 'admin.calendar');
+        return Inertia::render('Calendar/Admin', $this->buildCalendarProps($user, $year, $month, false));
     }
 
     public function markRange(Request $request)
@@ -86,6 +87,77 @@ class CalendarController extends Controller
         return $this->deleteDateRange($user, $request->start, $request->end, $request->type);
     }
 
+    public function week(int $year = null, int $week = null)
+    {
+        $currentUser = Auth::user();
+        $year = $year ?? now()->isoWeekYear;
+        $week = $week ?? now()->isoWeek;
+
+        $monday = Carbon::now()->setISODate($year, $week)->startOfDay();
+        $sunday = $monday->copy()->addDays(6);
+
+        $days = array_map(
+            fn($i) => $monday->copy()->addDays($i)->format('Y-m-d'),
+            range(0, 6)
+        );
+
+        $holidays = Holiday::whereBetween('date', [$monday->toDateString(), $sunday->toDateString()])
+            ->get()
+            ->mapWithKeys(fn($h) => [$h->date->format('Y-m-d') => $h->name])
+            ->toArray();
+
+        $absenceGrid = [];
+        Absence::whereBetween('date', [$monday->toDateString(), $sunday->toDateString()])
+            ->whereIn('type', ['vacation', 'client', 'internal', 'undefined', 'training', 'absent'])
+            ->get()
+            ->each(function ($absence) use (&$absenceGrid) {
+                $absenceGrid[$absence->user_id][$absence->date->format('Y-m-d')] = [
+                    'type'   => $absence->type,
+                    'remote' => (bool) $absence->remote,
+                ];
+            });
+
+        $calendarYears = array_unique([$monday->year, $sunday->year]);
+        $birthdayGrid  = [];
+        User::whereNotNull('birthdate')->get(['id', 'name', 'birthdate'])
+            ->each(function ($u) use (&$birthdayGrid, $days, $calendarYears) {
+                foreach ($calendarYears as $y) {
+                    $bday = $u->birthdate->copy()->setYear($y)->format('Y-m-d');
+                    if (in_array($bday, $days)) {
+                        $birthdayGrid[$u->id][$bday] = true;
+                        break;
+                    }
+                }
+            });
+
+        $users = User::orderBy('name')->get(['id', 'name'])->toArray();
+
+        $currentIdx = array_search($currentUser->id, array_column($users, 'id'));
+        if ($currentIdx !== false) {
+            $me = array_splice($users, $currentIdx, 1)[0];
+            array_unshift($users, $me);
+        }
+
+        $prevWeek = $monday->copy()->subWeek();
+        $nextWeek = $monday->copy()->addWeek();
+
+        return Inertia::render('Calendar/Week', [
+            'year'         => $year,
+            'week'         => $week,
+            'days'         => $days,
+            'holidays'     => $holidays,
+            'absenceGrid'  => $absenceGrid,
+            'birthdayGrid' => $birthdayGrid,
+            'users'        => $users,
+            'currentUser'  => ['id' => $currentUser->id, 'name' => $currentUser->name],
+            'today'        => now()->format('Y-m-d'),
+            'mondayYear'   => $monday->year,
+            'mondayMonth'  => $monday->month,
+            'prevWeek'     => ['year' => $prevWeek->isoWeekYear, 'week' => $prevWeek->isoWeek],
+            'nextWeek'     => ['year' => $nextWeek->isoWeekYear, 'week' => $nextWeek->isoWeek],
+        ]);
+    }
+
     public function yearOverview(int $year)
     {
         $types = ['vacation', 'client', 'internal', 'undefined', 'training', 'absent'];
@@ -123,43 +195,59 @@ class CalendarController extends Controller
             9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro',
         ];
 
-        return view('calendar.overview', compact('year', 'months', 'monthNames', 'yearTotals'));
+        $monthsData = [];
+        foreach ($months as $m => $monthData) {
+            $typesData = [];
+            foreach ($monthData['types'] as $type => $typeData) {
+                $typesData[$type] = [
+                    'days'        => $typeData['days'],
+                    'peopleCount' => count($typeData['people']),
+                ];
+            }
+            $monthsData[$m] = ['total' => $monthData['total'], 'types' => $typesData];
+        }
+
+        $yearTotalsData = [];
+        foreach ($yearTotals as $type => $info) {
+            $yearTotalsData[$type] = [
+                'days'        => $info['days'],
+                'peopleCount' => count($info['people']),
+            ];
+        }
+
+        return Inertia::render('Calendar/Overview', [
+            'year'       => $year,
+            'months'     => $monthsData,
+            'monthNames' => $monthNames,
+            'yearTotals' => $yearTotalsData,
+            'today'      => now()->format('Y-m-d'),
+        ]);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private function buildCalendarView(User $user, int $year, int $month, string $view, bool $showAll = false)
+    private function buildCalendarProps(User $user, int $year, int $month, bool $showAll = false): array
     {
         $firstDay    = Carbon::create($year, $month, 1);
         $daysInMonth = $firstDay->daysInMonth;
-        $startOffset = $firstDay->dayOfWeek; // Sun=0 … Sat=6
+        $startOffset = $firstDay->dayOfWeek; // Sun=0…Sat=6
 
-        // Status days for Alpine (full year, all types)
         $yearStatusDays = $this->yearStatusDays($user, $year);
 
-        // Vacation days this month — still needed for $vacationCount stat
-        $vacationDays = array_filter($yearStatusDays, fn($s) =>
-            $s['type'] === 'vacation'
-            && str_starts_with($s['date'], sprintf('%04d-%02d', $year, $month))
-        );
-
-        // Holidays this month (date => name)
         $holidays = Holiday::whereYear('date', $year)
             ->whereMonth('date', $month)
             ->get()
             ->mapWithKeys(fn($h) => [$h->date->format('Y-m-d') => $h->name])
             ->toArray();
 
-        // User's birthday in this month (computed, not stored)
         $birthdayDates = [];
         if ($user->birthdate) {
-            $bday = $user->birthdate->setYear($year);
+            $bday = $user->birthdate->copy()->setYear($year);
             if ((int) $bday->format('m') === $month) {
                 $birthdayDates[] = $bday->format('Y-m-d');
             }
         }
 
-        // Stats for the month
         $totalWorkdays = 0;
         $holidayCount  = count($holidays);
         for ($d = 1; $d <= $daysInMonth; $d++) {
@@ -169,19 +257,51 @@ class CalendarController extends Controller
                 $totalWorkdays++;
             }
         }
-        $vacationCount     = count($vacationDays);
-        $workedDays        = max(0, $totalWorkdays - $vacationCount);
+
+        $vacationCount = count(array_filter($yearStatusDays, fn($s) =>
+            $s['type'] === 'vacation'
+            && str_starts_with($s['date'], sprintf('%04d-%02d', $year, $month))
+        ));
+
         $yearVacationCount = Absence::where('user_id', $user->id)
             ->where('type', 'vacation')
             ->whereYear('date', $year)
             ->count();
+
         $vacationAllowance = 22;
 
-        // Other users' statuses for the month (date => [{user_id, name, initials, type, remote}])
-        $othersStatus    = [];
-        $othersBirthdays = [];
-        $teamMembers     = [];
+        $prevMonth = Carbon::create($year, $month, 1)->subMonth();
+        $nextMonth = Carbon::create($year, $month, 1)->addMonth();
+
+        $monthNames = [
+            1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
+            5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
+            9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro',
+        ];
+
+        $props = [
+            'user'               => ['id' => $user->id, 'name' => $user->name],
+            'year'               => $year,
+            'month'              => $month,
+            'monthName'          => $monthNames[$month],
+            'daysInMonth'        => $daysInMonth,
+            'startOffset'        => $startOffset,
+            'totalWorkdays'      => $totalWorkdays,
+            'yearStatusDays'     => $yearStatusDays,
+            'holidays'           => $holidays,
+            'birthdayDates'      => $birthdayDates,
+            'prevMonth'          => ['year' => $prevMonth->year, 'month' => $prevMonth->month],
+            'nextMonth'          => ['year' => $nextMonth->year, 'month' => $nextMonth->month],
+            'yearVacationCount'  => $yearVacationCount,
+            'vacationAllowance'  => $vacationAllowance,
+            'holidayCount'       => $holidayCount,
+            'workedDays'         => max(0, $totalWorkdays - $vacationCount),
+        ];
+
         if ($showAll) {
+            $othersStatus    = [];
+            $othersBirthdays = [];
+
             Absence::with('user')
                 ->whereIn('type', ['vacation', 'client', 'internal', 'undefined', 'training', 'absent'])
                 ->where('user_id', '!=', $user->id)
@@ -198,12 +318,6 @@ class CalendarController extends Controller
                     ];
                 });
 
-            $teamMembers = User::where('id', '!=', $user->id)
-                ->orderBy('name')
-                ->get(['id', 'name'])
-                ->map(fn($u) => ['id' => $u->id, 'name' => $u->name])
-                ->toArray();
-
             User::where('id', '!=', $user->id)
                 ->whereNotNull('birthdate')
                 ->whereMonth('birthdate', $month)
@@ -215,25 +329,18 @@ class CalendarController extends Controller
                         'initials' => $this->initials($u->name),
                     ];
                 });
+
+            $props['teamMembers']     = User::where('id', '!=', $user->id)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn($u) => ['id' => $u->id, 'name' => $u->name])
+                ->values()
+                ->toArray();
+            $props['othersStatus']    = $othersStatus;
+            $props['othersBirthdays'] = $othersBirthdays;
         }
 
-        $prevMonth = Carbon::create($year, $month, 1)->subMonth();
-        $nextMonth = Carbon::create($year, $month, 1)->addMonth();
-
-        $monthNames = [
-            1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
-            5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
-            9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro',
-        ];
-
-        return view($view, compact(
-            'user', 'year', 'month', 'daysInMonth', 'startOffset',
-            'yearStatusDays', 'holidays', 'birthdayDates',
-            'vacationCount', 'holidayCount', 'workedDays',
-            'yearVacationCount', 'vacationAllowance',
-            'prevMonth', 'nextMonth', 'monthNames',
-            'showAll', 'othersStatus', 'othersBirthdays', 'teamMembers'
-        ));
+        return $props;
     }
 
     private function saveRange(User $user, string $startStr, string $endStr, string $type = 'vacation', bool $remote = false): JsonResponse
