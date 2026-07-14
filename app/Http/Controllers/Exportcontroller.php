@@ -17,9 +17,18 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class ExportController extends Controller
 {
     private const MONTHS_PT = [
-        1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
-        5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
-        9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro',
+        1 => 'Janeiro',
+        2 => 'Fevereiro',
+        3 => 'Março',
+        4 => 'Abril',
+        5 => 'Maio',
+        6 => 'Junho',
+        7 => 'Julho',
+        8 => 'Agosto',
+        9 => 'Setembro',
+        10 => 'Outubro',
+        11 => 'Novembro',
+        12 => 'Dezembro',
     ];
 
     private const COMPANY      = 'Empresa: Mindshaker - Serviços Informáticos, Lda.';
@@ -105,8 +114,13 @@ class ExportController extends Controller
 
         // ── Row 2: column headers ─────────────────────────────────────────────
         $headers = [
-            'A' => 'Data', 'B' => 'Hora de Entrada', 'C' => 'Início Pausa',
-            'D' => 'Fim Pausa', 'E' => 'Hora de Saída', 'F' => 'Total Horas', 'G' => 'Observações',
+            'A' => 'Data',
+            'B' => 'Hora de Entrada',
+            'C' => 'Início Pausa',
+            'D' => 'Fim Pausa',
+            'E' => 'Hora de Saída',
+            'F' => 'Total Horas',
+            'G' => 'Observações',
         ];
         foreach ($headers as $col => $label) {
             $sheet->setCellValue("{$col}2", $label);
@@ -142,18 +156,25 @@ class ExportController extends Controller
                 ->setVertical(Alignment::VERTICAL_CENTER);
 
             if (!$isWeekend && !$isHoliday) {
-                if ($absence || $isBirthday) {
+                $leaveEmpty = $isBirthday || ($absence && in_array($absence->type, ['vacation', 'absent']));
+
+                if ($leaveEmpty) {
                     $obs = match (true) {
-                        $isBirthday                    => 'Aniversário',
-                        $absence->type === 'vacation'  => 'Férias',
-                        default                        => '',
+                        $isBirthday                   => 'Aniversário',
+                        $absence->type === 'vacation' => 'Férias',
+                        default                       => 'Ausente',
                     };
-                    if ($obs) $sheet->setCellValue("G{$row}", $obs);
+                    $sheet->setCellValue("G{$row}", $obs);
                 } else {
                     $this->setTimeCell($sheet, "B{$row}", $entrada);
                     $this->setTimeCell($sheet, "C{$row}", $inicioAlmoco);
                     $this->setTimeCell($sheet, "D{$row}", $fimAlmoco);
                     $this->setTimeCell($sheet, "E{$row}", $saida);
+
+                    if ($absence) {
+
+                        $sheet->setCellValue("G{$row}", "");
+                    }
                 }
             }
 

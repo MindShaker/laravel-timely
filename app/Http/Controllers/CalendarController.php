@@ -87,27 +87,28 @@ class CalendarController extends Controller
         return $this->deleteDateRange($user, $request->start, $request->end, $request->type);
     }
 
-    public function week(int $year = null, int $week = null)
+    public function week(Request $request, int $year = null, int $week = null)
     {
         $currentUser = Auth::user();
-        $year = $year ?? now()->isoWeekYear;
-        $week = $week ?? now()->isoWeek;
+        $year  = $year  ?? now()->isoWeekYear;
+        $week  = $week  ?? now()->isoWeek;
+        $span  = max(1, min(2, (int) $request->get('span', 1)));
 
         $monday = Carbon::now()->setISODate($year, $week)->startOfDay();
-        $sunday = $monday->copy()->addDays(6);
+        $end    = $monday->copy()->addDays($span * 7 - 1);
 
         $days = array_map(
             fn($i) => $monday->copy()->addDays($i)->format('Y-m-d'),
-            range(0, 6)
+            range(0, $span * 7 - 1)
         );
 
-        $holidays = Holiday::whereBetween('date', [$monday->toDateString(), $sunday->toDateString()])
+        $holidays = Holiday::whereBetween('date', [$monday->toDateString(), $end->toDateString()])
             ->get()
             ->mapWithKeys(fn($h) => [$h->date->format('Y-m-d') => $h->name])
             ->toArray();
 
         $absenceGrid = [];
-        Absence::whereBetween('date', [$monday->toDateString(), $sunday->toDateString()])
+        Absence::whereBetween('date', [$monday->toDateString(), $end->toDateString()])
             ->whereIn('type', ['vacation', 'client', 'internal', 'undefined', 'training', 'absent'])
             ->get()
             ->each(function ($absence) use (&$absenceGrid) {
@@ -117,7 +118,7 @@ class CalendarController extends Controller
                 ];
             });
 
-        $calendarYears = array_unique([$monday->year, $sunday->year]);
+        $calendarYears = array_unique([$monday->year, $end->year]);
         $birthdayGrid  = [];
         User::whereNotNull('birthdate')->get(['id', 'name', 'birthdate'])
             ->each(function ($u) use (&$birthdayGrid, $days, $calendarYears) {
@@ -138,12 +139,13 @@ class CalendarController extends Controller
             array_unshift($users, $me);
         }
 
-        $prevWeek = $monday->copy()->subWeek();
-        $nextWeek = $monday->copy()->addWeek();
+        $prevWeek = $monday->copy()->subWeeks($span);
+        $nextWeek = $monday->copy()->addWeeks($span);
 
         return Inertia::render('Calendar/Week', [
             'year'         => $year,
             'week'         => $week,
+            'span'         => $span,
             'days'         => $days,
             'holidays'     => $holidays,
             'absenceGrid'  => $absenceGrid,

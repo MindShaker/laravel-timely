@@ -25,6 +25,7 @@ export function useCalendar({
     holidayDates,
     birthdayDates,
     cacheKey = null,
+    selectedPeopleKey = null,
     userId = null,
     allPeopleIds = [],
     initialSelectedPeople = {},
@@ -37,14 +38,22 @@ export function useCalendar({
     const dragActive   = ref(false);
     const dragMode     = ref('add');
     const dragStartType = ref(null);
-    const markType     = ref('vacation');
+    const markType     = ref(null);
     const markRemote   = ref(false);
     const filters      = ref({ vacation: true, client: true, internal: true, undefined: true, training: true, absent: true });
     const selectedPeople = ref({ ...initialSelectedPeople });
     const _statusIndex = ref({});
+    const blockReason  = ref(null);
     let   _dragTimer   = null;
+    let   _blockTimer  = null;
 
-    // Initialise from cache or server data
+    function showBlock(msg) {
+        clearTimeout(_blockTimer);
+        blockReason.value = msg;
+        _blockTimer = setTimeout(() => { blockReason.value = null; }, 3000);
+    }
+
+    // Initialise status days from cache or server data
     if (cacheKey) {
         try {
             const cached = localStorage.getItem(cacheKey);
@@ -57,6 +66,14 @@ export function useCalendar({
         statusDays.value = [...initialStatusDays];
     }
 
+    // Initialise selected people from cache
+    if (selectedPeopleKey) {
+        try {
+            const cached = localStorage.getItem(selectedPeopleKey);
+            if (cached) selectedPeople.value = { ...initialSelectedPeople, ...JSON.parse(cached) };
+        } catch {}
+    }
+
     function rebuildIndex() {
         _statusIndex.value = Object.fromEntries(statusDays.value.map(s => [s.date, s]));
     }
@@ -66,6 +83,12 @@ export function useCalendar({
         rebuildIndex();
         if (cacheKey) {
             try { localStorage.setItem(cacheKey, JSON.stringify(statusDays.value)); } catch {}
+        }
+    }, { deep: true });
+
+    watch(selectedPeople, () => {
+        if (selectedPeopleKey) {
+            try { localStorage.setItem(selectedPeopleKey, JSON.stringify(selectedPeople.value)); } catch {}
         }
     }, { deep: true });
 
@@ -132,9 +155,23 @@ export function useCalendar({
         clearTimeout(_dragTimer);
         const existing = _statusIndex.value[date];
         const visible  = existing && filters.value[existing.type] ? existing : null;
+        const mode     = visible ? 'remove' : 'add';
+
+        // Block adding when no type is selected
+        if (mode === 'add' && !markType.value) {
+            showBlock('Seleciona um tipo antes de marcar dias.');
+            return;
+        }
+
+        // Block when the current user is hidden in the sidebar
+        if (userId !== null && !selectedPeople.value[userId]) {
+            showBlock('Tens de estar selecionado nas Pessoas para marcar dias.');
+            return;
+        }
+
         isDragging.value    = true;
         dragActive.value    = false;
-        dragMode.value      = visible ? 'remove' : 'add';
+        dragMode.value      = mode;
         dragStartType.value = visible ? visible.type : null;
         dragStart.value     = date;
         dragEnd.value       = date;
@@ -144,6 +181,21 @@ export function useCalendar({
     function updateDrag(date) {
         if (!isDragging.value || !dragActive.value) return;
         dragEnd.value = date;
+    }
+
+    // Merge server response without clobbering concurrent optimistic updates.
+    // Only dates within [rangeStart, rangeEnd] are reconciled from the server;
+    // everything outside that window keeps the current (possibly optimistic) state.
+    function reconcile(serverDays, rangeStart, rangeEnd) {
+        const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const opRange = new Set();
+        const cur = new Date(rangeStart + 'T00:00:00');
+        const to  = new Date(rangeEnd   + 'T00:00:00');
+        while (cur <= to) { opRange.add(fmt(cur)); cur.setDate(cur.getDate() + 1); }
+        return [
+            ...statusDays.value.filter(s => !opRange.has(s.date)),
+            ...serverDays.filter(s => opRange.has(s.date)),
+        ];
     }
 
     async function endDrag() {
@@ -172,7 +224,7 @@ export function useCalendar({
                 body: JSON.stringify({ start, end, type }),
             });
             const data = await res.json();
-            statusDays.value = data.status_days;
+            statusDays.value = reconcile(data.status_days, start, end);
         } else {
             const mType   = markType.value;
             const mRemote = markRemote.value;
@@ -186,7 +238,7 @@ export function useCalendar({
                 body: JSON.stringify({ start, end, type: mType, remote: mRemote }),
             });
             const data = await res.json();
-            statusDays.value = data.status_days;
+            statusDays.value = reconcile(data.status_days, start, end);
         }
     }
 
@@ -198,7 +250,7 @@ export function useCalendar({
             headers: { 'X-CSRF-TOKEN': csrf },
         });
         const data = await res.json();
-        statusDays.value = data.status_days;
+        statusDays.value = reconcile(data.status_days, date, date);
     }
 
     return {
@@ -209,6 +261,7 @@ export function useCalendar({
         filters,
         selectedPeople,
         allSelected,
+        blockReason,
         toggleAll,
         isInPreview,
         cellStyle,

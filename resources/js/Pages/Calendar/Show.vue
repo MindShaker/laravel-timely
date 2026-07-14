@@ -33,6 +33,7 @@ const calendar = useCalendar({
     holidayDates: Object.keys(props.holidays),
     birthdayDates: props.birthdayDates,
     cacheKey: `timely_status_${props.user.id}_${props.year}`,
+    selectedPeopleKey: `timely_selected_${props.user.id}`,
     userId: props.user.id,
     allPeopleIds: [props.user.id, ...props.teamMembers.map(m => m.id)],
     initialSelectedPeople: { [props.user.id]: true },
@@ -80,12 +81,12 @@ const cells = computed(() => {
 // ── Others per cell ───────────────────────────────────────────────────────────
 
 const badgeStyles = {
-    vacation: { bg: 'bg-cyan-900/40', text: 'text-cyan-300' },
-    client: { bg: 'bg-emerald-900/40', text: 'text-emerald-300' },
-    internal: { bg: 'bg-blue-900/40', text: 'text-blue-300' },
-    undefined: { bg: 'bg-orange-900/40', text: 'text-orange-300' },
-    training: { bg: 'bg-purple-900/40', text: 'text-purple-300' },
-    absent: { bg: 'bg-rose-900/40', text: 'text-rose-300' },
+    vacation: { bg: 'bg-cyan-900/40', text: 'text-cyan-300', border: 'border-cyan-300' },
+    client: { bg: 'bg-emerald-900/40', text: 'text-emerald-300', border: 'border-emerald-300' },
+    internal: { bg: 'bg-blue-900/40', text: 'text-blue-300', border: 'border-blue-300' },
+    undefined: { bg: 'bg-orange-900/40', text: 'text-orange-300', border: 'border-orange-300' },
+    training: { bg: 'bg-purple-900/40', text: 'text-purple-300', border: 'border-purple-300' },
+    absent: { bg: 'bg-rose-900/40', text: 'text-rose-300', border: 'border-rose-300' },
 };
 
 function othersForDate(date) {
@@ -289,88 +290,63 @@ const typeLabels = {
                     <div class="grid grid-cols-7 gap-1">
                         <template v-for="(cell, i) in cells" :key="i">
                             <div v-if="cell.empty"></div>
-                            <div v-else
-                                class="group relative rounded-lg border aspect-3/2 flex flex-col items-center justify-center text-sm transition"
+                            <div v-else class="group relative rounded-lg border flex flex-col p-2 transition min-h-28"
                                 :class="[
                                     cell.isWeekend ? 'border-neutral-800 opacity-40 cursor-default' : '',
                                     cell.holName ? 'border-amber-800/40 bg-amber-950/30 cursor-not-allowed' : '',
                                     cell.isBirthday ? 'border-amber-500/40 bg-amber-900/20 cursor-not-allowed' : '',
-                                    (!cell.isWeekend && !cell.holName && !cell.isBirthday) ? 'border-neutral-700 bg-surface cursor-pointer hover:border-primary/50 hover:bg-surface-hover' : '',
+                                    (!cell.isWeekend && !cell.holName && !cell.isBirthday) ? ('border-neutral-700 bg-surface hover:bg-surface-hover ' + ((calendar.markType.value || calendar.cellStyle(cell.date)) && calendar.selectedPeople.value[user.id] ? 'cursor-pointer hover:border-primary/50' : 'cursor-not-allowed')) : '',
                                 ]" v-bind="(!cell.isWeekend && !cell.holName && !cell.isBirthday) ? {
                                     onMousedown: (e) => { e.preventDefault(); calendar.startDrag(cell.date); },
                                     onMouseover: () => calendar.updateDrag(cell.date),
                                     style: calendar.cellStyle(cell.date),
                                 } : {}">
 
-                                <span class="font-medium">{{ cell.day }}</span>
+                                <span class="text-sm font-semibold leading-none">{{ cell.day }}</span>
 
                                 <span v-if="cell.holName"
-                                    class="text-[10px] text-amber-400 text-center leading-tight px-1 mt-0.5 line-clamp-2">
+                                    class="text-[10px] text-amber-400 leading-tight mt-1 line-clamp-2">
                                     {{ cell.holName }}
                                 </span>
-                                <span v-if="cell.isBirthday" class="text-[10px] text-amber-300 mt-0.5">🎂
+                                <span v-if="cell.isBirthday" class="text-[10px] text-amber-300 leading-tight mt-1">🎂
                                     Aniversário</span>
 
-                                <!-- Team member badges -->
+                                <!-- Team member display -->
                                 <template v-if="teamMembers.length">
-                                    <div v-if="othersForDate(cell.date).length"
-                                        class="flex flex-wrap flex-col gap-1 justify-center mt-1 px-1">
-                                        <span v-for="o in othersForDate(cell.date)" :key="o.user_id"
-                                            class="text-[11px] px-1.5 py-0.5 rounded font-semibold leading-none"
-                                            :class="[badgeStyles[o.type]?.bg ?? 'bg-orange-900/40', badgeStyles[o.type]?.text ?? 'text-orange-300', o.remote ? 'border border-dashed border-current' : '']"
-                                            :title="o.name">{{ o.initials }}</span>
-                                    </div>
-
-                                    <div v-if="birthdaysForDate(cell.date).length"
-                                        class="flex flex-wrap gap-1 justify-center mt-1 px-1">
-                                        <span v-for="(b, bi) in birthdaysForDate(cell.date).slice(0, 5)" :key="bi"
-                                            class="text-[11px] px-1.5 py-0.5 rounded bg-yellow-900/40 text-yellow-300 font-semibold leading-none"
-                                            :title="b.name">{{ b.initials }} 👑</span>
-                                        <span v-if="birthdaysForDate(cell.date).length > 5"
-                                            class="text-[11px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 leading-none">
-                                            +{{ birthdaysForDate(cell.date).length - 5 }}
-                                        </span>
-                                    </div>
-
-                                    <!-- Hover tooltip -->
-                                    <div v-if="othersForDate(cell.date).length || birthdaysForDate(cell.date).length"
-                                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50
-                                               pointer-events-none opacity-0 group-hover:opacity-100
-                                               transition-opacity duration-150
-                                               bg-neutral-900 border border-neutral-700 rounded-lg shadow-2xl
-                                               p-2.5 min-w-[140px] whitespace-nowrap text-left">
-
+                                    <template v-if="othersForDate(cell.date).length">
                                         <template v-for="(people, type) in groupByType(othersForDate(cell.date))"
                                             :key="type">
-                                            <p
-                                                class="text-[10px] font-medium text-neutral-500 uppercase tracking-wide mb-1 mt-2 first:mt-0">
+                                            <p class="text-[10px] border-b  font-bold uppercase tracking-wide mt-1.5 mb-0.5 first:mt-1.5"
+                                                :class="[badgeStyles[type]?.text ?? 'text-orange-300', badgeStyles[type]?.border ?? 'border-orange-300']">
                                                 {{ typeLabels[type] ?? type }}
                                             </p>
                                             <div v-for="o in people" :key="o.user_id"
-                                                class="flex items-center gap-1.5 py-0.5">
+                                                class="flex items-center gap-1.5 min-w-0 py-0.5">
                                                 <span
                                                     class="text-[10px] px-1.5 py-0.5 rounded font-semibold leading-none shrink-0"
                                                     :class="[badgeStyles[o.type]?.bg ?? 'bg-orange-900/40', badgeStyles[o.type]?.text ?? 'text-orange-300', o.remote ? 'border border-dashed border-current' : '']">
                                                     {{ o.initials }}
                                                 </span>
-                                                <span class="text-xs text-content">{{ o.name }}{{ o.remote ? ' 🏠' : ''
-                                                    }}</span>
+                                                <span class="text-xs text-content truncate">{{ o.name }}{{ o.remote ?
+                                                    '🏠' : '' }}</span>
                                             </div>
                                         </template>
+                                    </template>
 
-                                        <template v-if="birthdaysForDate(cell.date).length">
-                                            <p class="text-[10px] font-medium text-neutral-500 uppercase tracking-wide mb-1"
-                                                :class="othersForDate(cell.date).length ? 'mt-2' : ''">Aniversário</p>
-                                            <div v-for="(b, bi) in birthdaysForDate(cell.date)" :key="bi"
-                                                class="flex items-center gap-1.5 py-0.5">
-                                                <span
-                                                    class="text-[10px] px-1.5 py-0.5 rounded bg-yellow-900/40 text-yellow-300 font-semibold leading-none shrink-0">
-                                                    {{ b.initials }} 👑
-                                                </span>
-                                                <span class="text-xs text-content">{{ b.name }}</span>
-                                            </div>
-                                        </template>
-                                    </div>
+                                    <template v-if="birthdaysForDate(cell.date).length">
+                                        <p
+                                            class="text-[10px] font-medium text-neutral-500 uppercase tracking-wide mt-1.5 mb-0.5">
+                                            Aniversário
+                                        </p>
+                                        <div v-for="(b, bi) in birthdaysForDate(cell.date)" :key="bi"
+                                            class="flex items-center gap-1.5 min-w-0 py-0.5">
+                                            <span
+                                                class="text-[10px] px-1.5 py-0.5 rounded bg-yellow-900/40 text-yellow-300 font-semibold leading-none shrink-0">
+                                                {{ b.initials }} 👑
+                                            </span>
+                                            <span class="text-xs text-content truncate">{{ b.name }}</span>
+                                        </div>
+                                    </template>
                                 </template>
 
                             </div>
@@ -384,5 +360,26 @@ const typeLabels = {
 
             </div>
         </div>
+
+        <!-- Block reason toast -->
+        <Teleport to="body">
+            <Transition
+                enter-active-class="transition-all duration-200"
+                leave-active-class="transition-all duration-300"
+                enter-from-class="opacity-0 -translate-y-2"
+                leave-to-class="opacity-0 -translate-y-2">
+                <div v-if="calendar.blockReason.value"
+                    class="fixed top-5 left-1/2 -translate-x-1/2 z-50
+                           flex items-center gap-2.5 px-4 py-2.5
+                           bg-neutral-900 border border-amber-800/60 rounded-xl shadow-2xl
+                           text-sm text-amber-300 whitespace-nowrap pointer-events-none">
+                    <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                    {{ calendar.blockReason.value }}
+                </div>
+            </Transition>
+        </Teleport>
+
     </AppLayout>
 </template>

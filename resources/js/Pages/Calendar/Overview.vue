@@ -4,22 +4,22 @@ import { Head, Link } from '@inertiajs/vue3';
 import { computed, inject } from 'vue';
 
 const props = defineProps({
-    year:       Number,
-    months:     Object,
+    year: Number,
+    months: Object,
     monthNames: Object,
     yearTotals: Object,
-    today:      String,
+    today: String,
 });
 
 const route = inject('route');
 
 const typeConfig = {
-    vacation:  { label: 'Férias',     color: '#22d3ee', bg: '#164e63' },
-    client:    { label: 'Cliente',    color: '#22c55e', bg: '#14532d' },
-    internal:  { label: 'Interno',    color: '#1d4ed8', bg: '#172554' },
+    vacation: { label: 'Férias', color: '#22d3ee', bg: '#164e63' },
+    client: { label: 'Cliente', color: '#22c55e', bg: '#14532d' },
+    internal: { label: 'Interno', color: '#1d4ed8', bg: '#172554' },
     undefined: { label: 'Disponível', color: '#f97316', bg: '#7c2d12' },
-    training:  { label: 'Formação',   color: '#a855f7', bg: '#3b0764' },
-    absent:    { label: 'Ausente',    color: '#f43f5e', bg: '#4c0519' },
+    training: { label: 'Formação', color: '#a855f7', bg: '#3b0764' },
+    absent: { label: 'Ausente', color: '#f43f5e', bg: '#4c0519' },
 };
 
 const typeKeys = Object.keys(typeConfig);
@@ -38,7 +38,7 @@ const monthEntries = computed(() =>
             name: props.monthNames[mNum],
             total: data.total,
             types: data.types,
-            isPast:    props.year < todayYear || (props.year === todayYear && mNum < todayMonth),
+            isPast: props.year < todayYear || (props.year === todayYear && mNum < todayMonth),
             isCurrent: props.year === todayYear && mNum === todayMonth,
         };
     })
@@ -47,6 +47,7 @@ const monthEntries = computed(() =>
 
 <template>
     <AppLayout>
+
         <Head :title="`Visão Anual ${year}`" />
 
         <template #header>
@@ -113,7 +114,7 @@ const monthEntries = computed(() =>
                         class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-left mb-0.5">
                         <span class="size-2.5 rounded-sm shrink-0 ring-1"
                             :style="`background:${typeConfig[t].bg};--tw-ring-color:${typeConfig[t].color}60`"></span>
-                        <span class="text-content-muted flex-1 text-sm leading-none">{{ typeConfig[t].label }}</span>
+                        <span class="text-white flex-1 text-sm leading-none">{{ typeConfig[t].label }}</span>
                         <span class="text-content text-xs tabular-nums font-medium">
                             {{ yearTotals[t].days }}d
                         </span>
@@ -132,49 +133,50 @@ const monthEntries = computed(() =>
 
             <!-- Month grid -->
             <div class="flex-1 min-w-0">
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <Link v-for="entry in monthEntries" :key="entry.m"
-                :href="route('calendar.month', [year, entry.m])"
-                class="group flex flex-col gap-3 rounded-xl border p-4 transition-all"
-                :class="entry.isCurrent
-                    ? 'border-neutral-600 bg-surface'
-                    : 'border-neutral-800 bg-surface hover:border-neutral-600'">
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <Link v-for="entry in monthEntries" :key="entry.m" :href="route('calendar.month', [year, entry.m])"
+                        class="group flex flex-col gap-3 rounded-xl border p-4 transition-all" :class="entry.isCurrent
+                            ? 'border-neutral-600 bg-surface'
+                            : 'border-neutral-800 bg-surface hover:border-neutral-600'">
 
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-semibold transition-colors"
-                        :class="entry.isCurrent ? 'text-content' : 'text-content-muted group-hover:text-content'">
-                        {{ entry.name }}
-                    </h3>
-                    <span v-if="entry.total > 0" class="text-[11px] text-neutral-500 tabular-nums">{{ entry.total }}d</span>
-                </div>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-semibold transition-colors"
+                                :class="entry.isCurrent ? 'text-content' : 'text-content-muted group-hover:text-content'">
+                                {{ entry.name }}
+                            </h3>
+                            <span v-if="entry.total > 0" class="text-[11px] text-white tabular-nums">{{
+                                entry.total }}d</span>
+                        </div>
 
-                <div class="h-1.5 rounded-full overflow-hidden bg-neutral-800">
-                    <div v-if="entry.total > 0" class="flex h-full">
-                        <template v-for="t in typeKeys" :key="t">
-                            <div v-if="entry.types[t]?.days > 0"
-                                :style="`background:${typeConfig[t].color};flex-grow:${entry.types[t].days}`">
+                        <div class="h-1.5 rounded-full overflow-hidden bg-neutral-800">
+                            <div v-if="entry.total > 0" class="flex h-full">
+                                <template v-for="t in typeKeys" :key="t">
+                                    <div v-if="entry.types[t]?.days > 0"
+                                        :style="`background:${typeConfig[t].color};flex-grow:${entry.types[t].days}`">
+                                    </div>
+                                </template>
                             </div>
-                        </template>
-                    </div>
-                </div>
+                        </div>
 
-                <div class="flex flex-col gap-1.5 min-h-[3rem]">
-                    <template v-if="entry.total > 0">
-                        <template v-for="t in typeKeys" :key="t">
-                            <div v-if="entry.types[t]?.days > 0" class="flex items-center gap-2 text-xs">
-                                <span class="size-2 rounded-sm shrink-0" :style="`background:${typeConfig[t].color}`"></span>
-                                <span class="text-content-muted flex-1 leading-none">{{ typeConfig[t].label }}</span>
-                                <span class="font-medium text-content tabular-nums">
-                                    {{ entry.types[t].days }}d / {{ entry.types[t].peopleCount }}p
-                                </span>
-                            </div>
-                        </template>
-                    </template>
-                    <p v-else class="text-[11px] text-neutral-700 italic leading-none mt-1">Sem registos</p>
-                </div>
+                        <div class="flex flex-col gap-1.5 min-h-[3rem]">
+                            <template v-if="entry.total > 0">
+                                <template v-for="t in typeKeys" :key="t">
+                                    <div v-if="entry.types[t]?.days > 0" class="flex items-center gap-2 text-xs">
+                                        <span class="size-2 rounded-sm shrink-0"
+                                            :style="`background:${typeConfig[t].color}`"></span>
+                                        <span class="text-content-muted flex-1 leading-none">{{ typeConfig[t].label
+                                            }}</span>
+                                        <span class="font-medium text-content tabular-nums">
+                                            {{ entry.types[t].days }}d / {{ entry.types[t].peopleCount }}p
+                                        </span>
+                                    </div>
+                                </template>
+                            </template>
+                            <p v-else class="text-[11px] text-neutral-700 italic leading-none mt-1">Sem registos</p>
+                        </div>
 
-            </Link>
-        </div>
+                    </Link>
+                </div>
             </div><!-- /month grid -->
 
         </div><!-- /flex layout -->
