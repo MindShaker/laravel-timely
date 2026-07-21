@@ -31,6 +31,20 @@ export function useCalendar({
     initialSelectedPeople = {},
     routes,
 }) {
+    const UI_PREF_KEY  = 'timely_ui_pref';
+
+    function loadUiPref() {
+        try { return JSON.parse(localStorage.getItem(UI_PREF_KEY)) ?? {}; } catch { return {}; }
+    }
+    function saveUiPref(patch) {
+        try {
+            const current = loadUiPref();
+            localStorage.setItem(UI_PREF_KEY, JSON.stringify({ ...current, ...patch }));
+        } catch {}
+    }
+
+    const uiPref = loadUiPref();
+
     const statusDays   = ref([]);
     const isDragging   = ref(false);
     const dragStart    = ref(null);
@@ -38,9 +52,9 @@ export function useCalendar({
     const dragActive   = ref(false);
     const dragMode     = ref('add');
     const dragStartType = ref(null);
-    const markType     = ref(null);
-    const markRemote   = ref(false);
-    const filters      = ref({ vacation: true, client: true, internal: true, undefined: true, training: true, absent: true });
+    const markType     = ref(uiPref.markType ?? null);
+    const markRemote   = ref(uiPref.markRemote ?? false);
+    const filters      = ref(uiPref.filters ?? { vacation: true, client: true, internal: true, undefined: true, training: true, absent: true });
     const selectedPeople = ref({ ...initialSelectedPeople });
     const _statusIndex = ref({});
     const blockReason  = ref(null);
@@ -91,6 +105,10 @@ export function useCalendar({
             try { localStorage.setItem(selectedPeopleKey, JSON.stringify(selectedPeople.value)); } catch {}
         }
     }, { deep: true });
+
+    watch(markType,   v  => saveUiPref({ markType: v }));
+    watch(markRemote, v  => saveUiPref({ markRemote: v }));
+    watch(filters,    v  => saveUiPref({ filters: { ...v } }), { deep: true });
 
     // ── People ────────────────────────────────────────────────────────────────
 
@@ -155,7 +173,8 @@ export function useCalendar({
         clearTimeout(_dragTimer);
         const existing = _statusIndex.value[date];
         const visible  = existing && filters.value[existing.type] ? existing : null;
-        const mode     = visible ? 'remove' : 'add';
+        // If a type is selected and the day is already marked with a *different* type, overwrite it.
+        const mode     = visible && (!markType.value || visible.type === markType.value) ? 'remove' : 'add';
 
         // Block adding when no type is selected
         if (mode === 'add' && !markType.value) {

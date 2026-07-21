@@ -28,6 +28,6 @@ defineExpose({ focus: () => input.value?.focus() });
         :value="modelValue"
         :disabled="disabled"
         @input="$emit('update:modelValue', $event.target.value)"
-        class="rounded-md border-input-border bg-input text-content placeholder:text-input-placeholder shadow-sm focus:border-input-ring focus:ring-input-ring focus:outline-none"
+        class="rounded-md border-input-border bg-input text-content text-sm placeholder:text-input-placeholder shadow-sm px-3 py-2 focus:border-input-ring focus:ring-input-ring focus:outline-none"
     />
 </template>
