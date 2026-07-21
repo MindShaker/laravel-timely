@@ -2,7 +2,7 @@
 import AppLayout from '@/Pages/Layouts/AppLayout.vue';
 import { useCalendar } from '@/Composables/useCalendar';
 import { Head, Link } from '@inertiajs/vue3';
-import { computed, inject, onMounted, onUnmounted } from 'vue';
+import { computed, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 
 const props = defineProps({
     user: Object,
@@ -116,6 +116,15 @@ const typeLabels = {
     vacation: 'Férias', client: 'Cliente', internal: 'Interno',
     undefined: 'Disponível', training: 'Formação', absent: 'Ausente',
 };
+
+const flashTarget = ref(null);
+let _flashTimer = null;
+watch(() => calendar.blockReason.value, (msg) => {
+    clearTimeout(_flashTimer);
+    if (!msg) return;
+    flashTarget.value = msg.includes('tipo') ? 'markType' : 'self';
+    _flashTimer = setTimeout(() => { flashTarget.value = null; }, 2500);
+});
 </script>
 
 <template>
@@ -194,14 +203,17 @@ const typeLabels = {
                     <p class="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest px-1 mb-2">Marcar
                         como</p>
 
-                    <button v-for="t in markTypes" :key="t.key" @click="calendar.markType.value = t.key"
-                        class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm font-medium transition-all text-left mb-0.5"
-                        :class="calendar.markType.value === t.key ? 'text-white' : 'text-content-muted hover:text-content hover:bg-surface-hover'"
-                        :style="calendar.markType.value === t.key ? `background-color:${t.bg}` : ''">
-                        <span class="size-2.5 rounded-sm shrink-0 ring-1 transition-all"
-                            :style="`background:${t.bd};--tw-ring-color:${t.bd}60`"></span>
-                        {{ t.label }}
-                    </button>
+                    <div class="rounded-lg transition-all"
+                        :class="flashTarget === 'markType' ? 'ring-2 ring-amber-500 animate-pulse' : ''">
+                        <button v-for="t in markTypes" :key="t.key" @click="calendar.markType.value = t.key"
+                            class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm font-medium transition-all text-left mb-0.5"
+                            :class="calendar.markType.value === t.key ? 'text-white' : 'text-content-muted hover:text-content hover:bg-surface-hover'"
+                            :style="calendar.markType.value === t.key ? `background-color:${t.bg}` : ''">
+                            <span class="size-2.5 rounded-sm shrink-0 ring-1 transition-all"
+                                :style="`background:${t.bd};--tw-ring-color:${t.bd}60`"></span>
+                            {{ t.label }}
+                        </button>
+                    </div>
 
                     <button @click="calendar.markRemote.value = !calendar.markRemote.value"
                         class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm font-medium transition-all text-left mt-1"
@@ -249,7 +261,7 @@ const typeLabels = {
                         <button
                             @click="calendar.selectedPeople.value[user.id] = !calendar.selectedPeople.value[user.id]"
                             class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm transition-all text-left mb-0.5"
-                            :class="calendar.selectedPeople.value[user.id] ? 'text-content' : 'text-content-muted hover:text-content hover:bg-surface-hover'">
+                            :class="[calendar.selectedPeople.value[user.id] ? 'text-content' : 'text-content-muted hover:text-content hover:bg-surface-hover', flashTarget === 'self' ? 'ring-2 ring-amber-500 animate-pulse' : '']">
                             <span class="size-4 rounded border flex items-center justify-center shrink-0 transition-all"
                                 :class="calendar.selectedPeople.value[user.id] ? 'bg-neutral-500 border-neutral-500' : 'border-neutral-600'">
                                 <svg v-if="calendar.selectedPeople.value[user.id]" class="size-2.5" viewBox="0 0 10 10"
