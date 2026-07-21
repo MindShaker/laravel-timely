@@ -59,7 +59,7 @@ Route::middleware('auth')->group(function () {
 
         // Export
         Route::get('/export',          [ExportController::class, 'index'])->name('admin.export');
-        Route::get('/export/download', [ExportController::class, 'download'])->name('admin.export.download');
+        Route::post('/export/download', [ExportController::class, 'download'])->name('admin.export.download');
     });
 });
 

@@ -45,20 +45,81 @@ class ExportController extends Controller
     public function download(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'month'   => 'required|date_format:Y-m',
+            'user_ids'   => 'required|array|min:1',
+            'user_ids.*' => 'exists:users,id',
+            'from'       => 'required|date_format:Y-m',
+            'to'         => 'required|date_format:Y-m',
         ]);
 
-        $user  = User::findOrFail($request->user_id);
-        $year  = (int) substr($request->month, 0, 4);
-        $month = (int) substr($request->month, 5, 2);
+        abort_if($request->to < $request->from, 422, 'O mês de fim deve ser igual ou posterior ao de início.');
 
-        $spreadsheet = $this->makeSpreadsheet();
-        $sheet       = $spreadsheet->createSheet()->setTitle(self::MONTHS_PT[$month]);
-        $this->buildAttendanceSheet($sheet, $user, $month, $year);
+        $users = User::whereIn('id', $request->user_ids)->orderBy('name')->get();
+        $from  = Carbon::parse($request->from . '-01');
+        $to    = Carbon::parse($request->to . '-01');
 
-        $filename = "Mindshaker - {$user->name} - " . self::MONTHS_PT[$month] . " {$year}";
-        $this->sendXlsx($spreadsheet, $filename);
+        // All months in range
+        $months = [];
+        for ($cur = $from->copy(); $cur->lte($to); $cur->addMonth()) {
+            $months[] = ['year' => $cur->year, 'month' => $cur->month];
+        }
+
+        // Filename range label
+        $singleMonth = $from->format('Y-m') === $to->format('Y-m');
+        $sameYear    = $from->year === $to->year;
+        if ($singleMonth) {
+            $rangeLabel = self::MONTHS_PT[$from->month] . ' ' . $from->year;
+        } elseif ($sameYear) {
+            $rangeLabel = self::MONTHS_PT[$from->month] . ' a ' . self::MONTHS_PT[$to->month] . ' ' . $to->year;
+        } else {
+            $rangeLabel = self::MONTHS_PT[$from->month] . ' ' . $from->year
+                . ' a ' . self::MONTHS_PT[$to->month] . ' ' . $to->year;
+        }
+
+        $tmpDir = sys_get_temp_dir() . '/export_' . uniqid('', true);
+        mkdir($tmpDir, 0700, true);
+
+        $files = [];
+        foreach ($users as $user) {
+            $spreadsheet = $this->makeSpreadsheet();
+            foreach ($months as ['year' => $year, 'month' => $month]) {
+                $title = count($months) > 1
+                    ? self::MONTHS_PT[$month] . ' ' . $year
+                    : self::MONTHS_PT[$month];
+                $sheet = $spreadsheet->createSheet()->setTitle($title);
+                $this->buildAttendanceSheet($sheet, $user, $month, $year);
+            }
+
+            $filename = "Mindshaker - {$user->name} - {$rangeLabel}.xlsx";
+            $tmpPath  = $tmpDir . '/' . $filename;
+            (new Xlsx($spreadsheet))->save($tmpPath);
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+
+            $files[] = ['path' => $tmpPath, 'name' => $filename];
+        }
+
+        $zipName = "Mindshaker - Registo de Ponto - {$rangeLabel}.zip";
+        $zipPath = $tmpDir . '/export.zip';
+
+        $zip = new \ZipArchive();
+        abort_if($zip->open($zipPath, \ZipArchive::CREATE) !== true, 500, 'Não foi possível criar o ficheiro ZIP.');
+        foreach ($files as ['path' => $path, 'name' => $name]) {
+            $zip->addFile($path, $name);
+        }
+        $zip->close();
+
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment;filename="' . $zipName . '"');
+        header('Content-Length: ' . filesize($zipPath));
+        header('Cache-Control: max-age=0');
+        readfile($zipPath);
+
+        foreach ($files as ['path' => $path]) {
+            @unlink($path);
+        }
+        @unlink($zipPath);
+        @rmdir($tmpDir);
+        exit;
     }
 
     // ── Sheet builder ─────────────────────────────────────────────────────────
@@ -171,10 +232,6 @@ class ExportController extends Controller
                     $this->setTimeCell($sheet, "D{$row}", $fimAlmoco);
                     $this->setTimeCell($sheet, "E{$row}", $saida);
 
-                    if ($absence) {
-
-                        $sheet->setCellValue("G{$row}", "");
-                    }
                 }
             }
 
