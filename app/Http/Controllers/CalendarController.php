@@ -226,6 +226,49 @@ class CalendarController extends Controller
         ]);
     }
 
+    public function vacationOverview(int $year = null)
+    {
+        $year = $year ?? now()->year;
+
+        $users = User::orderBy('name')->get(['id', 'name']);
+
+        $absences = Absence::where('type', 'vacation')
+            ->whereYear('date', $year)
+            ->get(['user_id', 'date']);
+
+        // Build data[userId][month] = count
+        $data = [];
+        foreach ($absences as $a) {
+            $data[$a->user_id][$a->date->month] = ($data[$a->user_id][$a->date->month] ?? 0) + 1;
+        }
+
+        $monthNames = [
+            1 => 'Jan', 2 => 'Fev', 3 => 'Mar',  4 => 'Abr',
+            5 => 'Mai', 6 => 'Jun', 7 => 'Jul',   8 => 'Ago',
+            9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez',
+        ];
+
+        $rows = $users->map(function ($user) use ($data) {
+            $months = [];
+            $total  = 0;
+            for ($m = 1; $m <= 12; $m++) {
+                $count     = $data[$user->id][$m] ?? 0;
+                $months[$m] = $count;
+                $total     += $count;
+            }
+            return ['id' => $user->id, 'name' => $user->name, 'months' => $months, 'total' => $total];
+        });
+
+        return Inertia::render('Admin/Vacation/Index', [
+            'year'       => $year,
+            'rows'       => $rows,
+            'monthNames' => $monthNames,
+            'allowance'  => 22,
+            'prevYear'   => $year - 1,
+            'nextYear'   => $year + 1,
+        ]);
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private function buildCalendarProps(User $user, int $year, int $month, bool $showAll = false): array

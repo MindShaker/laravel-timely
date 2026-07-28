@@ -57,6 +57,9 @@ Route::middleware('auth')->group(function () {
         Route::patch('/holidays/{holiday}',  [AdminHolidayController::class, 'update'])->name('admin.holidays.update');
         Route::delete('/holidays/{holiday}', [AdminHolidayController::class, 'destroy'])->name('admin.holidays.destroy');
 
+        // Vacation overview
+        Route::get('/vacation/{year?}', [CalendarController::class, 'vacationOverview'])->name('admin.vacation')->where('year', '\d{4}');
+
         // Export
         Route::get('/export',          [ExportController::class, 'index'])->name('admin.export');
         Route::post('/export/download', [ExportController::class, 'download'])->name('admin.export.download');

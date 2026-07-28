@@ -12,6 +12,7 @@ function isActive(routePattern) {
     if (routePattern === 'calendar') return current.startsWith('/calendar') || current === '/';
     if (routePattern === 'admin.users') return current.startsWith('/admin/users');
     if (routePattern === 'admin.holidays') return current.startsWith('/admin/holidays');
+    if (routePattern === 'admin.vacation') return current.startsWith('/admin/vacation');
     if (routePattern === 'admin.export') return current.startsWith('/admin/export');
     if (routePattern === 'profile.edit') return current.startsWith('/profile');
     return false;
@@ -54,6 +55,12 @@ function isActive(routePattern) {
                                 ? 'inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-nav-active-bg text-nav-active-fg leading-5 transition duration-150 ease-in-out'
                                 : 'inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium text-nav-fg hover:bg-nav-hover-bg leading-5 transition duration-150 ease-in-out'">
                             Feriados
+                        </Link>
+                        <Link :href="route('admin.vacation')"
+                            :class="isActive('admin.vacation')
+                                ? 'inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium bg-nav-active-bg text-nav-active-fg leading-5 transition duration-150 ease-in-out'
+                                : 'inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium text-nav-fg hover:bg-nav-hover-bg leading-5 transition duration-150 ease-in-out'">
+                            Férias
                         </Link>
                         <Link :href="route('admin.export')"
                             :class="isActive('admin.export')
@@ -106,6 +113,9 @@ function isActive(routePattern) {
                     <Link :href="route('admin.holidays', new Date().getFullYear())"
                         class="inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium text-nav-fg hover:bg-nav-hover-bg transition">
                         Feriados</Link>
+                    <Link :href="route('admin.vacation')"
+                        class="inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium text-nav-fg hover:bg-nav-hover-bg transition">
+                        Férias</Link>
                     <Link :href="route('admin.export')"
                         class="inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium text-nav-fg hover:bg-nav-hover-bg transition">
                         Exportar</Link>
