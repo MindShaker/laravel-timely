@@ -24,6 +24,7 @@ const props = defineProps({
     teamMembers: { type: Array, default: () => [] },
     othersStatus: { type: Object, default: () => ({}) },
     othersBirthdays: { type: Object, default: () => ({}) },
+    feedUrl: { type: String, default: null },
 });
 
 const route = inject('route');
@@ -125,6 +126,23 @@ watch(() => calendar.blockReason.value, (msg) => {
     flashTarget.value = msg.includes('tipo') ? 'markType' : 'self';
     _flashTimer = setTimeout(() => { flashTarget.value = null; }, 2500);
 });
+
+// ── Subscribe popover ─────────────────────────────────────────────────────────
+
+const showSubscribe = ref(false);
+const copied = ref(false);
+let _copiedTimer = null;
+
+const webcalUrl = computed(() => props.feedUrl?.replace(/^https?:\/\//, 'webcal://') ?? '');
+
+function copyFeedUrl() {
+    if (!props.feedUrl) return;
+    navigator.clipboard.writeText(props.feedUrl).then(() => {
+        copied.value = true;
+        clearTimeout(_copiedTimer);
+        _copiedTimer = setTimeout(() => { copied.value = false; }, 2000);
+    });
+}
 </script>
 
 <template>
@@ -189,6 +207,66 @@ watch(() => calendar.blockReason.value, (msg) => {
                         <span class="size-3 rounded-sm bg-surface ring-1 ring-neutral-600 inline-block"></span>
                         Dias úteis: <strong class="text-content">{{ workedDays }}</strong>
                     </span>
+
+                    <!-- Subscribe button -->
+                    <div v-if="feedUrl" class="relative">
+                        <button @click="showSubscribe = !showSubscribe"
+                            class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition"
+                            :class="showSubscribe
+                                ? 'bg-cyan-900/30 border-cyan-700/60 text-cyan-300'
+                                : 'border-neutral-700 text-content-muted hover:text-content hover:border-neutral-600'">
+                            <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                            </svg>
+                            Subscrever
+                        </button>
+
+                        <!-- Popover -->
+                        <div v-if="showSubscribe"
+                            class="absolute right-0 top-full mt-2 w-80 bg-surface border border-neutral-700 rounded-xl shadow-xl p-4 z-50 space-y-3">
+
+                            <p class="text-xs font-semibold text-content">Subscrever calendário de férias</p>
+                            <p class="text-xs text-content-muted leading-relaxed">
+                                Adiciona as tuas férias a qualquer aplicação de calendário. As alterações ficam sincronizadas automaticamente.
+                            </p>
+
+                            <!-- Copy URL -->
+                            <div class="flex gap-1.5">
+                                <input readonly :value="feedUrl"
+                                    class="flex-1 min-w-0 bg-input border border-input-border rounded-lg px-2.5 py-1.5 text-xs text-content-muted font-mono truncate focus:outline-none" />
+                                <button @click="copyFeedUrl"
+                                    class="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition"
+                                    :class="copied
+                                        ? 'bg-cyan-900/40 border-cyan-700/60 text-cyan-300'
+                                        : 'border-neutral-700 text-content-muted hover:text-content hover:border-neutral-600'">
+                                    {{ copied ? 'Copiado!' : 'Copiar' }}
+                                </button>
+                            </div>
+
+                            <!-- Quick links -->
+                            <div class="flex flex-col gap-1.5">
+                                <a :href="`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(feedUrl)}`"
+                                    target="_blank" rel="noopener"
+                                    class="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-700 text-xs text-content-muted hover:text-content hover:border-neutral-600 transition">
+                                    <svg class="size-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12 12-5.373 12-12S18.628 0 12 0zm6.804 17.264c-.185.578-.76.946-1.37.946H6.566c-.61 0-1.185-.368-1.37-.946L4 12l1.196-5.264C5.381 6.158 5.956 5.79 6.566 5.79h10.868c.61 0 1.185.368 1.37.946L20 12l-1.196 5.264z"/>
+                                    </svg>
+                                    Abrir no Google Calendar
+                                </a>
+                                <a :href="webcalUrl"
+                                    class="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-700 text-xs text-content-muted hover:text-content hover:border-neutral-600 transition">
+                                    <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                                    </svg>
+                                    Abrir no Apple Calendar
+                                </a>
+                            </div>
+
+                            <p class="text-[10px] text-neutral-600 leading-relaxed">
+                                As atualizações podem demorar até 24h a aparecer no Google Calendar.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
             </div>

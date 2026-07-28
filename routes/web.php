@@ -2,11 +2,16 @@
 
 use App\Http\Controllers\AdminHolidayController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\CalendarFeedController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
+// Public calendar feed — no auth, protected by per-user token
+Route::get('/calendar/feed/{token}.ics', [CalendarFeedController::class, 'feed'])
+    ->name('calendar.feed');
 
 Route::get('/', function () {
     return Auth::check()

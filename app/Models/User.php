@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -19,6 +20,7 @@ class User extends Authenticatable
         'hora_entrada',
         'hora_saida',
         'birthdate',
+        'calendar_token',
     ];
 
     protected $hidden = [
@@ -43,5 +45,14 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->tipo === 'admin';
+    }
+
+    public function getOrCreateCalendarToken(): string
+    {
+        if (!$this->calendar_token) {
+            $this->calendar_token = Str::random(48);
+            $this->saveQuietly();
+        }
+        return $this->calendar_token;
     }
 }

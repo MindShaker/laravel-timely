@@ -18,7 +18,11 @@ class CalendarController extends Controller
         $year  = $year  ?? now()->year;
         $month = $month ?? now()->month;
 
-        return Inertia::render('Calendar/Show', $this->buildCalendarProps(Auth::user(), $year, $month, true));
+        $user    = Auth::user();
+        $props   = $this->buildCalendarProps($user, $year, $month, true);
+        $props['feedUrl'] = route('calendar.feed', ['token' => $user->getOrCreateCalendarToken()]);
+
+        return Inertia::render('Calendar/Show', $props);
     }
 
     public function adminShow(User $user, int $year = null, int $month = null)
