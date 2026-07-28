@@ -1,41 +1,41 @@
 {
-  "_InputLabel-LLANiY5q.js": {
-    "file": "assets/InputLabel-LLANiY5q.js",
+  "_InputLabel-DBQmh5SR.js": {
+    "file": "assets/InputLabel-DBQmh5SR.js",
     "name": "InputLabel",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_PrimaryButton-CNvKubCq.js": {
-    "file": "assets/PrimaryButton-CNvKubCq.js",
+  "_PrimaryButton-CMxUu0-o.js": {
+    "file": "assets/PrimaryButton-CMxUu0-o.js",
     "name": "PrimaryButton",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_SecondaryButton-Cl4CUjSd.js": {
-    "file": "assets/SecondaryButton-Cl4CUjSd.js",
+  "_SecondaryButton-dclPYcG7.js": {
+    "file": "assets/SecondaryButton-dclPYcG7.js",
     "name": "SecondaryButton",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_TextInput-BJXbVUcM.js": {
-    "file": "assets/TextInput-BJXbVUcM.js",
+  "_TextInput-CjYB7rZM.js": {
+    "file": "assets/TextInput-CjYB7rZM.js",
     "name": "TextInput",
     "imports": [
       "resources/js/app.js"
     ]
   },
-  "_useCalendar-B8dfMmWb.js": {
-    "file": "assets/useCalendar-B8dfMmWb.js",
+  "_useCalendar-DB5eFAg2.js": {
+    "file": "assets/useCalendar-DB5eFAg2.js",
     "name": "useCalendar",
     "imports": [
       "resources/js/app.js"
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-CmvQfP6Q.css",
+    "file": "assets/app-HZWerjJh.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -44,19 +44,19 @@
     ]
   },
   "resources/js/Pages/Admin/Export/Index.vue": {
-    "file": "assets/Index-DbIa4LIM.js",
+    "file": "assets/Index-D6Yvye21.js",
     "name": "Index",
     "src": "resources/js/Pages/Admin/Export/Index.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "resources/js/Pages/Layouts/AppLayout.vue",
-      "_InputLabel-LLANiY5q.js",
-      "_PrimaryButton-CNvKubCq.js"
+      "_InputLabel-DBQmh5SR.js",
+      "_PrimaryButton-CMxUu0-o.js"
     ]
   },
   "resources/js/Pages/Admin/Holidays/Index.vue": {
-    "file": "assets/Index-CWJ_6aSo.js",
+    "file": "assets/Index-Fe0WjED-.js",
     "name": "Index",
     "src": "resources/js/Pages/Admin/Holidays/Index.vue",
     "isDynamicEntry": true,
@@ -66,119 +66,129 @@
     ]
   },
   "resources/js/Pages/Admin/Users/Form.vue": {
-    "file": "assets/Form-D3vdEvjx.js",
+    "file": "assets/Form-BgWdwxra.js",
     "name": "Form",
     "src": "resources/js/Pages/Admin/Users/Form.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "resources/js/Pages/Layouts/AppLayout.vue",
-      "_TextInput-BJXbVUcM.js",
-      "_InputLabel-LLANiY5q.js",
-      "_PrimaryButton-CNvKubCq.js",
-      "_SecondaryButton-Cl4CUjSd.js"
+      "_TextInput-CjYB7rZM.js",
+      "_InputLabel-DBQmh5SR.js",
+      "_PrimaryButton-CMxUu0-o.js",
+      "_SecondaryButton-dclPYcG7.js"
     ]
   },
   "resources/js/Pages/Admin/Users/Index.vue": {
-    "file": "assets/Index-CIu0nmjV.js",
+    "file": "assets/Index-DJ8dTHD6.js",
     "name": "Index",
     "src": "resources/js/Pages/Admin/Users/Index.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/Pages/Layouts/AppLayout.vue",
-      "_PrimaryButton-CNvKubCq.js",
+      "_PrimaryButton-CMxUu0-o.js",
+      "resources/js/app.js"
+    ]
+  },
+  "resources/js/Pages/Admin/Vacation/Index.vue": {
+    "file": "assets/Index-BeOVOXGL.js",
+    "name": "Index",
+    "src": "resources/js/Pages/Admin/Vacation/Index.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/Pages/Layouts/AppLayout.vue",
       "resources/js/app.js"
     ]
   },
   "resources/js/Pages/Auth/ConfirmPassword.vue": {
-    "file": "assets/ConfirmPassword-BCxmbuG8.js",
+    "file": "assets/ConfirmPassword-D9fy284Y.js",
     "name": "ConfirmPassword",
     "src": "resources/js/Pages/Auth/ConfirmPassword.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "resources/js/Pages/Layouts/GuestLayout.vue",
-      "_TextInput-BJXbVUcM.js",
-      "_InputLabel-LLANiY5q.js",
-      "_PrimaryButton-CNvKubCq.js"
+      "_TextInput-CjYB7rZM.js",
+      "_InputLabel-DBQmh5SR.js",
+      "_PrimaryButton-CMxUu0-o.js"
     ]
   },
   "resources/js/Pages/Auth/ForgotPassword.vue": {
-    "file": "assets/ForgotPassword-X-Vut5Hi.js",
+    "file": "assets/ForgotPassword-BgWIeREs.js",
     "name": "ForgotPassword",
     "src": "resources/js/Pages/Auth/ForgotPassword.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "resources/js/Pages/Layouts/GuestLayout.vue",
-      "_TextInput-BJXbVUcM.js",
-      "_InputLabel-LLANiY5q.js",
-      "_PrimaryButton-CNvKubCq.js"
+      "_TextInput-CjYB7rZM.js",
+      "_InputLabel-DBQmh5SR.js",
+      "_PrimaryButton-CMxUu0-o.js"
     ]
   },
   "resources/js/Pages/Auth/Login.vue": {
-    "file": "assets/Login-BzwVExYH.js",
+    "file": "assets/Login-ndzvjfWW.js",
     "name": "Login",
     "src": "resources/js/Pages/Auth/Login.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "resources/js/Pages/Layouts/GuestLayout.vue",
-      "_TextInput-BJXbVUcM.js",
-      "_InputLabel-LLANiY5q.js",
-      "_PrimaryButton-CNvKubCq.js"
+      "_TextInput-CjYB7rZM.js",
+      "_InputLabel-DBQmh5SR.js",
+      "_PrimaryButton-CMxUu0-o.js"
     ]
   },
   "resources/js/Pages/Auth/Register.vue": {
-    "file": "assets/Register-CQTLCelX.js",
+    "file": "assets/Register-D4U3sEwL.js",
     "name": "Register",
     "src": "resources/js/Pages/Auth/Register.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "resources/js/Pages/Layouts/GuestLayout.vue",
-      "_TextInput-BJXbVUcM.js",
-      "_InputLabel-LLANiY5q.js",
-      "_PrimaryButton-CNvKubCq.js"
+      "_TextInput-CjYB7rZM.js",
+      "_InputLabel-DBQmh5SR.js",
+      "_PrimaryButton-CMxUu0-o.js"
     ]
   },
   "resources/js/Pages/Auth/ResetPassword.vue": {
-    "file": "assets/ResetPassword-VD_wokv6.js",
+    "file": "assets/ResetPassword-BKtExCaa.js",
     "name": "ResetPassword",
     "src": "resources/js/Pages/Auth/ResetPassword.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "resources/js/Pages/Layouts/GuestLayout.vue",
-      "_TextInput-BJXbVUcM.js",
-      "_InputLabel-LLANiY5q.js",
-      "_PrimaryButton-CNvKubCq.js"
+      "_TextInput-CjYB7rZM.js",
+      "_InputLabel-DBQmh5SR.js",
+      "_PrimaryButton-CMxUu0-o.js"
     ]
   },
   "resources/js/Pages/Auth/VerifyEmail.vue": {
-    "file": "assets/VerifyEmail-CM-uvZhy.js",
+    "file": "assets/VerifyEmail-CfwQEUTG.js",
     "name": "VerifyEmail",
     "src": "resources/js/Pages/Auth/VerifyEmail.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/Pages/Layouts/GuestLayout.vue",
-      "_PrimaryButton-CNvKubCq.js",
+      "_PrimaryButton-CMxUu0-o.js",
       "resources/js/app.js"
     ]
   },
   "resources/js/Pages/Calendar/Admin.vue": {
-    "file": "assets/Admin-CT9-42zK.js",
+    "file": "assets/Admin-B0XgM1eG.js",
     "name": "Admin",
     "src": "resources/js/Pages/Calendar/Admin.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/Pages/Layouts/AppLayout.vue",
-      "_useCalendar-B8dfMmWb.js",
+      "_useCalendar-DB5eFAg2.js",
       "resources/js/app.js"
     ]
   },
   "resources/js/Pages/Calendar/Overview.vue": {
-    "file": "assets/Overview-BYVTrDgS.js",
+    "file": "assets/Overview-BiWgykQ8.js",
     "name": "Overview",
     "src": "resources/js/Pages/Calendar/Overview.vue",
     "isDynamicEntry": true,
@@ -188,18 +198,18 @@
     ]
   },
   "resources/js/Pages/Calendar/Show.vue": {
-    "file": "assets/Show-Dq-Eyq0A.js",
+    "file": "assets/Show-Jq-cca56.js",
     "name": "Show",
     "src": "resources/js/Pages/Calendar/Show.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "resources/js/Pages/Layouts/AppLayout.vue",
-      "_useCalendar-B8dfMmWb.js"
+      "_useCalendar-DB5eFAg2.js"
     ]
   },
   "resources/js/Pages/Calendar/Week.vue": {
-    "file": "assets/Week-Bd6vHXu4.js",
+    "file": "assets/Week-aqmrIj5q.js",
     "name": "Week",
     "src": "resources/js/Pages/Calendar/Week.vue",
     "isDynamicEntry": true,
@@ -209,7 +219,7 @@
     ]
   },
   "resources/js/Pages/Layouts/AppLayout.vue": {
-    "file": "assets/AppLayout-knN23l7s.js",
+    "file": "assets/AppLayout-C9K6sf_w.js",
     "name": "AppLayout",
     "src": "resources/js/Pages/Layouts/AppLayout.vue",
     "isDynamicEntry": true,
@@ -218,7 +228,7 @@
     ]
   },
   "resources/js/Pages/Layouts/GuestLayout.vue": {
-    "file": "assets/GuestLayout-Br_j_9OL.js",
+    "file": "assets/GuestLayout-DbluPmod.js",
     "name": "GuestLayout",
     "src": "resources/js/Pages/Layouts/GuestLayout.vue",
     "isDynamicEntry": true,
@@ -227,20 +237,20 @@
     ]
   },
   "resources/js/Pages/Profile/Edit.vue": {
-    "file": "assets/Edit-BrQ_VJ78.js",
+    "file": "assets/Edit-4-9v_8uB.js",
     "name": "Edit",
     "src": "resources/js/Pages/Profile/Edit.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.js",
       "resources/js/Pages/Layouts/AppLayout.vue",
-      "_TextInput-BJXbVUcM.js",
-      "_InputLabel-LLANiY5q.js",
-      "_SecondaryButton-Cl4CUjSd.js"
+      "_TextInput-CjYB7rZM.js",
+      "_InputLabel-DBQmh5SR.js",
+      "_SecondaryButton-dclPYcG7.js"
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-HjVsCv2w.js",
+    "file": "assets/app-BSFvfHHM.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -249,6 +259,7 @@
       "resources/js/Pages/Admin/Holidays/Index.vue",
       "resources/js/Pages/Admin/Users/Form.vue",
       "resources/js/Pages/Admin/Users/Index.vue",
+      "resources/js/Pages/Admin/Vacation/Index.vue",
       "resources/js/Pages/Auth/ConfirmPassword.vue",
       "resources/js/Pages/Auth/ForgotPassword.vue",
       "resources/js/Pages/Auth/Login.vue",

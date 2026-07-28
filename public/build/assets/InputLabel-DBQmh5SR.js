@@ -1,0 +1,1 @@
+import{d as o,j as r,t as s,z as a,o as n}from"./app-BSFvfHHM.js";const l=["for"],m={__name:"InputLabel",props:{value:String,for:String},setup(t){return(e,c)=>(n(),o("label",{for:e.$props.for,class:"block font-medium text-sm text-content-muted"},[r(s(t.value??""),1),a(e.$slots,"default")],8,l))}};export{m as _};
