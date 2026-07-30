@@ -25,6 +25,7 @@ const props = defineProps({
     othersStatus: { type: Object, default: () => ({}) },
     othersBirthdays: { type: Object, default: () => ({}) },
     feedUrl: { type: String, default: null },
+    vacationLocked: { type: Boolean, default: false },
 });
 
 const route = inject('route');
@@ -38,6 +39,7 @@ const calendar = useCalendar({
     userId: props.user.id,
     allPeopleIds: [props.user.id, ...props.teamMembers.map(m => m.id)],
     initialSelectedPeople: { [props.user.id]: true },
+    vacationLocked: props.vacationLocked,
     routes: {
         markRange: route('calendar.range'),
         removeRange: route('calendar.removeRange'),
@@ -245,7 +247,7 @@ function copyFeedUrl() {
 
                             <!-- Quick links -->
                             <div class="flex flex-col gap-1.5">
-                                <a :href="`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(feedUrl)}`"
+                                <a :href="`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`"
                                     target="_blank" rel="noopener"
                                     class="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-700 text-xs text-content-muted hover:text-content hover:border-neutral-600 transition">
                                     <svg class="size-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
@@ -272,6 +274,15 @@ function copyFeedUrl() {
             </div>
         </template>
 
+        <!-- Vacation locked banner -->
+        <div v-if="vacationLocked"
+            class="mb-4 flex items-center gap-2.5 px-4 py-3 rounded-lg bg-amber-950/40 border border-amber-800/50 text-amber-300 text-sm">
+            <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+            As férias de <strong class="mx-1">{{ year }}</strong> estão bloqueadas desde 31 de Março. Contacta um administrador para efetuar alterações.
+        </div>
+
         <div class="select-none pb-10">
             <div class="flex gap-6 items-start">
 
@@ -283,13 +294,22 @@ function copyFeedUrl() {
 
                     <div class="rounded-lg transition-all"
                         :class="flashTarget === 'markType' ? 'ring-2 ring-amber-500 animate-pulse' : ''">
-                        <button v-for="t in markTypes" :key="t.key" @click="calendar.markType.value = t.key"
+                        <button v-for="t in markTypes" :key="t.key"
+                            @click="(vacationLocked && t.key === 'vacation') ? null : (calendar.markType.value = t.key)"
                             class="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm font-medium transition-all text-left mb-0.5"
-                            :class="calendar.markType.value === t.key ? 'text-white' : 'text-content-muted hover:text-content hover:bg-surface-hover'"
-                            :style="calendar.markType.value === t.key ? `background-color:${t.bg}` : ''">
+                            :class="[
+                                (vacationLocked && t.key === 'vacation')
+                                    ? 'text-neutral-600 cursor-not-allowed opacity-50'
+                                    : calendar.markType.value === t.key ? 'text-white' : 'text-content-muted hover:text-content hover:bg-surface-hover'
+                            ]"
+                            :style="(vacationLocked && t.key === 'vacation') ? '' : (calendar.markType.value === t.key ? `background-color:${t.bg}` : '')"
+                            :title="(vacationLocked && t.key === 'vacation') ? 'Férias bloqueadas desde 31 de Março' : ''">
                             <span class="size-2.5 rounded-sm shrink-0 ring-1 transition-all"
                                 :style="`background:${t.bd};--tw-ring-color:${t.bd}60`"></span>
                             {{ t.label }}
+                            <svg v-if="vacationLocked && t.key === 'vacation'" class="size-3 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                            </svg>
                         </button>
                     </div>
 

@@ -29,6 +29,7 @@ export function useCalendar({
     userId = null,
     allPeopleIds = [],
     initialSelectedPeople = {},
+    vacationLocked = false,
     routes,
 }) {
     const UI_PREF_KEY  = 'timely_ui_pref';
@@ -182,6 +183,12 @@ export function useCalendar({
             return;
         }
 
+        // Block any operation that touches a vacation day when locked
+        if (vacationLocked && (markType.value === 'vacation' || (visible && visible.type === 'vacation'))) {
+            showBlock('As férias estão bloqueadas. Contacta um administrador.');
+            return;
+        }
+
         // Block when the current user is hidden in the sidebar
         if (userId !== null && !selectedPeople.value[userId]) {
             showBlock('Tens de estar selecionado nas Pessoas para marcar dias.');
@@ -236,6 +243,7 @@ export function useCalendar({
         const csrf = document.querySelector('meta[name="csrf-token"]').content;
 
         if (mode === 'remove') {
+            const snapshot = statusDays.value;
             statusDays.value = statusDays.value.filter(s => !(days.includes(s.date) && s.type === type));
             const res  = await fetch(routes.removeRange, {
                 method: 'DELETE',
@@ -243,10 +251,12 @@ export function useCalendar({
                 body: JSON.stringify({ start, end, type }),
             });
             const data = await res.json();
+            if (!res.ok) { statusDays.value = snapshot; return; }
             statusDays.value = reconcile(data.status_days, start, end);
         } else {
             const mType   = markType.value;
             const mRemote = markRemote.value;
+            const snapshot = statusDays.value;
             statusDays.value = [
                 ...statusDays.value.filter(s => !days.includes(s.date)),
                 ...days.map(d => ({ date: d, type: mType, remote: mRemote })),
@@ -257,11 +267,13 @@ export function useCalendar({
                 body: JSON.stringify({ start, end, type: mType, remote: mRemote }),
             });
             const data = await res.json();
+            if (!res.ok) { statusDays.value = snapshot; return; }
             statusDays.value = reconcile(data.status_days, start, end);
         }
     }
 
     async function removeDay(date) {
+        const snapshot = statusDays.value;
         statusDays.value = statusDays.value.filter(s => s.date !== date);
         const csrf = document.querySelector('meta[name="csrf-token"]').content;
         const res  = await fetch(routes.removeDay(date), {
@@ -269,6 +281,7 @@ export function useCalendar({
             headers: { 'X-CSRF-TOKEN': csrf },
         });
         const data = await res.json();
+        if (!res.ok) { statusDays.value = snapshot; return; }
         statusDays.value = reconcile(data.status_days, date, date);
     }
 

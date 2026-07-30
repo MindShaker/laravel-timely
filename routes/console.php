@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Every Monday at 06:00 — email users with unfilled planning days in the next 2 weeks
 Schedule::command('calendar:remind')->weeklyOn(1, '06:00');
+
+// Every Monday in February at 09:00 — remind users to plan vacations before 31 March
+Schedule::command('vacation:remind')->weeklyOn(1, '09:00')->when(fn () => now()->month === 2);

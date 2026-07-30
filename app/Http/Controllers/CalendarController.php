@@ -42,6 +42,13 @@ class CalendarController extends Controller
             'remote' => 'boolean',
         ]);
 
+        if ($request->type === 'vacation') {
+            $year = (int) substr($request->start, 0, 4);
+            if ($this->isVacationLocked($year)) {
+                return response()->json(['error' => 'As férias estão bloqueadas. Contacta um administrador.'], 403);
+            }
+        }
+
         return $this->saveRange(Auth::user(), $request->start, $request->end,
                                 $request->type, $request->boolean('remote'));
     }
@@ -61,7 +68,12 @@ class CalendarController extends Controller
 
     public function remove(string $date)
     {
-        return $this->deleteDay(Auth::user(), $date);
+        $user       = Auth::user();
+        $isVacation = Absence::where('user_id', $user->id)->where('date', $date)->where('type', 'vacation')->exists();
+        if ($isVacation && $this->isVacationLocked((int) substr($date, 0, 4))) {
+            return response()->json(['error' => 'As férias estão bloqueadas. Contacta um administrador.'], 403);
+        }
+        return $this->deleteDay($user, $date);
     }
 
     public function adminRemove(User $user, string $date)
@@ -76,6 +88,13 @@ class CalendarController extends Controller
             'end'   => 'required|date_format:Y-m-d',
             'type'  => 'required|in:vacation,client,internal,undefined,training,absent',
         ]);
+
+        if ($request->type === 'vacation') {
+            $year = (int) substr($request->start, 0, 4);
+            if ($this->isVacationLocked($year)) {
+                return response()->json(['error' => 'As férias estão bloqueadas. Contacta um administrador.'], 403);
+            }
+        }
 
         return $this->deleteDateRange(Auth::user(), $request->start, $request->end, $request->type);
     }
@@ -273,6 +292,11 @@ class CalendarController extends Controller
         ]);
     }
 
+    private function isVacationLocked(int $year): bool
+    {
+        return now()->gt(Carbon::create($year, 3, 31)->endOfDay());
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private function buildCalendarProps(User $user, int $year, int $month, bool $showAll = false): array
@@ -345,6 +369,7 @@ class CalendarController extends Controller
             'vacationAllowance'  => $vacationAllowance,
             'holidayCount'       => $holidayCount,
             'workedDays'         => max(0, $totalWorkdays - $vacationCount),
+            'vacationLocked'     => $this->isVacationLocked($year),
         ];
 
         if ($showAll) {
