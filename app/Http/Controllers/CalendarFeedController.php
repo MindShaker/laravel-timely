@@ -10,14 +10,15 @@ class CalendarFeedController extends Controller
 {
     public function feed(string $token): Response
     {
-        $user = User::where('calendar_token', $token)->firstOrFail();
+        // Validate token — 404 on bad/missing token
+        User::where('calendar_token', $token)->firstOrFail();
 
-        $absences = Absence::where('user_id', $user->id)
+        // Load all users' vacation absences, grouped by user
+        $absencesByUser = Absence::with('user')
             ->where('type', 'vacation')
             ->orderBy('date')
-            ->pluck('date');
-
-        $spans = $this->mergeSpans($absences->all());
+            ->get()
+            ->groupBy('user_id');
 
         $dtstamp = gmdate('Ymd\THis\Z');
         $lines   = [];
@@ -27,23 +28,28 @@ class CalendarFeedController extends Controller
         $lines[] = 'PRODID:-//Mindshaker//Timely//PT';
         $lines[] = 'CALSCALE:GREGORIAN';
         $lines[] = 'METHOD:PUBLISH';
-        $lines[] = 'X-WR-CALNAME:Férias — ' . $user->name;
+        $lines[] = 'X-WR-CALNAME:Férias — Mindshaker';
         $lines[] = 'X-WR-TIMEZONE:Europe/Lisbon';
         $lines[] = 'REFRESH-INTERVAL;VALUE=DURATION:PT12H';
         $lines[] = 'X-PUBLISHED-TTL:PT12H';
 
-        foreach ($spans as [$start, $end]) {
-            $dtstart = $start->format('Ymd');
-            $dtend   = $end->copy()->addDay()->format('Ymd');
-            $uid     = 'timely-' . $user->id . '-' . $dtstart . '@mindshaker.com';
+        foreach ($absencesByUser as $userId => $absences) {
+            $person = $absences->first()->user;
+            $spans  = $this->mergeSpans($absences->pluck('date')->all());
 
-            $lines[] = 'BEGIN:VEVENT';
-            $lines[] = 'UID:' . $uid;
-            $lines[] = 'DTSTAMP:' . $dtstamp;
-            $lines[] = 'DTSTART;VALUE=DATE:' . $dtstart;
-            $lines[] = 'DTEND;VALUE=DATE:' . $dtend;
-            $lines[] = 'SUMMARY:Férias';
-            $lines[] = 'END:VEVENT';
+            foreach ($spans as [$start, $end]) {
+                $dtstart = $start->format('Ymd');
+                $dtend   = $end->copy()->addDay()->format('Ymd');
+                $uid     = 'timely-' . $userId . '-' . $dtstart . '@mindshaker.com';
+
+                $lines[] = 'BEGIN:VEVENT';
+                $lines[] = 'UID:' . $uid;
+                $lines[] = 'DTSTAMP:' . $dtstamp;
+                $lines[] = 'DTSTART;VALUE=DATE:' . $dtstart;
+                $lines[] = 'DTEND;VALUE=DATE:' . $dtend;
+                $lines[] = 'SUMMARY:Férias — ' . $person->name;
+                $lines[] = 'END:VEVENT';
+            }
         }
 
         $lines[] = 'END:VCALENDAR';
