@@ -72,7 +72,7 @@ class CalendarFeedController extends Controller
 
         for ($i = 1; $i < count($dates); $i++) {
             $gap = $prev->diffInDays($dates[$i]);
-            if ($gap <= 3) {
+            if ($gap === 1) {
                 $prev = $dates[$i];
             } else {
                 $spans[] = [$start, $prev];
