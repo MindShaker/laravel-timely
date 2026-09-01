@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Logs;
+use App\Models\Absence;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
@@ -38,192 +36,128 @@ class ExportController extends Controller
     private const FILL_WEEKEND = 'BFBFBF';
     private const FILL_HOLIDAY = 'D8D8D8';
 
-    // ── Public endpoints ──────────────────────────────────────────────────────
-
-    public function export(Request $request)
+    public function index()
     {
-        if ($request->format === 'csv') $this->streamCsv($request);
-
-        // Check for incomplete logs unless the user already confirmed
-        if (!$request->boolean('force')) {
-            $incomplete = $this->findIncompleteLogs($request);
-            if (!empty($incomplete)) {
-                return view('admin.export_confirm', [
-                    'incomplete'   => $incomplete,
-                    'isAdmin'      => true,
-                    'exportRoute'  => route('export'),
-                    'params'       => $request->only(['name', 'month', 'time', 'format']),
-                ]);
-            }
-        }
-
-        $hasName  = $request->filled('name');
-        $hasMonth = $request->filled('month');
-        $year     = $hasMonth ? (int) substr($request->month, 0, 4) : now()->year;
-
-        if ($hasName && $hasMonth) {
-            $user        = User::where('name', '=', $request->name, 'and')->firstOrFail();
-            $month       = (int) substr($request->month, 5, 2);
-            $spreadsheet = $this->makeSpreadsheet();
-            $sheet       = $spreadsheet->createSheet()->setTitle(self::MONTHS_PT[$month]);
-            $this->buildMonthSheet($sheet, $user, $month, $year, $this->fetchLogs($user->id, $request->month));
-            $this->sendXlsx($spreadsheet, "Mindshaker - {$user->name} - " . self::MONTHS_PT[$month] . " {$year}");
-        }
-
-        if ($hasMonth && !$hasName) {
-            $month       = (int) substr($request->month, 5, 2);
-            $spreadsheet = $this->makeSpreadsheet();
-            foreach (User::all() as $user) {
-                $sheet = $spreadsheet->createSheet()->setTitle($this->safeSheetName($user->name));
-                $this->buildMonthSheet($sheet, $user, $month, $year, $this->fetchLogs($user->id, $request->month));
-            }
-            $this->sendXlsx($spreadsheet, "Mindshaker - " . self::MONTHS_PT[$month] . " {$year}");
-        }
-
-        if ($hasName && !$hasMonth) {
-            $user        = User::where('name', '=', $request->name, 'and')->firstOrFail();
-            $spreadsheet = $this->makeSpreadsheet();
-            $sheetsAdded = 0;
-            foreach (self::MONTHS_PT as $month => $monthName) {
-                $logs = $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month));
-                if ($logs->isEmpty()) continue;
-                $sheet = $spreadsheet->createSheet()->setTitle($monthName);
-                $this->buildMonthSheet($sheet, $user, $month, $year, $logs);
-                $sheetsAdded++;
-            }
-            if ($sheetsAdded === 0) $spreadsheet->createSheet()->setTitle('Sem Registos');
-            $this->sendXlsx($spreadsheet, "Mindshaker - {$user->name} - {$year}");
-        }
-
-         if (!$hasName && !$hasMonth) {
-            if (!$request->filled('year')) {
-                // Procura todos os anos únicos que existem na tabela de logs
-                $availableYears = Logs::selectRaw('YEAR(data) as year',[])
-                    ->distinct()
-                    ->orderBy('year', 'desc')
-                    ->pluck('year');
-
-                return view('admin.export_year_selector', [
-                    'exportRoute'    => route('export'),
-                    'params'         => $request->only(['format', 'force']),
-                    'availableYears' => $availableYears,
-                ]);
-            }
-
-            $this->streamAllUsersZip((int) $request->year);
-        }
+        $users = User::orderBy('name')->get(['id', 'name']);
+        return \Inertia\Inertia::render('Admin/Export/Index', compact('users'));
     }
 
-    public function exportuserlog(Request $request)
+    public function download(Request $request)
     {
-        $user     = User::findOrFail(Auth::id());
-        $hasMonth = $request->filled('month');
-        $year     = $hasMonth ? (int) substr($request->month, 0, 4) : now()->year;
+        $request->validate([
+            'user_ids'   => 'required|array|min:1',
+            'user_ids.*' => 'exists:users,id',
+            'from'       => 'required|date_format:Y-m',
+            'to'         => 'required|date_format:Y-m',
+        ]);
 
-        if ($request->format === 'csv') $this->streamCsv($request, $user->id);
+        abort_if($request->to < $request->from, 422, 'O mês de fim deve ser igual ou posterior ao de início.');
 
-        // Check for incomplete logs unless already confirmed
-        if (!$request->boolean('force')) {
-            $incomplete = $this->findIncompleteLogsForUser($user->id, $request);
-            if (!empty($incomplete)) {
-                return view('admin.export_confirm', [
-                    'incomplete'  => [$user->name => $incomplete],
-                    'isAdmin'     => false,
-                    'exportRoute' => route('exportuserlog'),
-                    'params'      => $request->only(['month', 'time', 'format']),
-                ]);
-            }
+        $users = User::whereIn('id', $request->user_ids)->orderBy('name')->get();
+        $from  = Carbon::parse($request->from . '-01');
+        $to    = Carbon::parse($request->to . '-01');
+
+        // All months in range
+        $months = [];
+        for ($cur = $from->copy(); $cur->lte($to); $cur->addMonth()) {
+            $months[] = ['year' => $cur->year, 'month' => $cur->month];
         }
 
-        $spreadsheet = $this->makeSpreadsheet();
-
-        if ($hasMonth) {
-            $month    = (int) substr($request->month, 5, 2);
-            $sheet    = $spreadsheet->createSheet()->setTitle(self::MONTHS_PT[$month]);
-            $this->buildMonthSheet($sheet, $user, $month, $year, $this->fetchLogs($user->id, $request->month));
-            $filename = "Mindshaker - {$user->name} - " . self::MONTHS_PT[$month] . " {$year}";
+        // Filename range label
+        $singleMonth = $from->format('Y-m') === $to->format('Y-m');
+        $sameYear    = $from->year === $to->year;
+        if ($singleMonth) {
+            $rangeLabel = self::MONTHS_PT[$from->month] . ' ' . $from->year;
+        } elseif ($sameYear) {
+            $rangeLabel = self::MONTHS_PT[$from->month] . ' a ' . self::MONTHS_PT[$to->month] . ' ' . $to->year;
         } else {
-            $sheetsAdded = 0;
-            foreach (self::MONTHS_PT as $month => $monthName) {
-                $logs = $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month));
-                if ($logs->isEmpty()) continue;
-                $sheet = $spreadsheet->createSheet()->setTitle($monthName);
-                $this->buildMonthSheet($sheet, $user, $month, $year, $logs);
-                $sheetsAdded++;
+            $rangeLabel = self::MONTHS_PT[$from->month] . ' ' . $from->year
+                . ' a ' . self::MONTHS_PT[$to->month] . ' ' . $to->year;
+        }
+
+        $tmpDir = sys_get_temp_dir() . '/export_' . uniqid('', true);
+        mkdir($tmpDir, 0700, true);
+
+        $files = [];
+        foreach ($users as $user) {
+            $spreadsheet = $this->makeSpreadsheet();
+            foreach ($months as ['year' => $year, 'month' => $month]) {
+                $title = count($months) > 1
+                    ? self::MONTHS_PT[$month] . ' ' . $year
+                    : self::MONTHS_PT[$month];
+                $sheet = $spreadsheet->createSheet()->setTitle($title);
+                $this->buildAttendanceSheet($sheet, $user, $month, $year);
             }
-            if ($sheetsAdded === 0) $spreadsheet->createSheet()->setTitle('Sem Registos');
-            $filename = "Mindshaker - {$user->name} - {$year}";
+
+            $filename = "Mindshaker - {$user->name} - {$rangeLabel}.xlsx";
+            $tmpPath  = $tmpDir . '/' . $filename;
+            (new Xlsx($spreadsheet))->save($tmpPath);
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
+
+            $files[] = ['path' => $tmpPath, 'name' => $filename];
         }
 
-        $this->sendXlsx($spreadsheet, $filename);
+        $zipName = "Mindshaker - Registo de Ponto - {$rangeLabel}.zip";
+        $zipPath = $tmpDir . '/export.zip';
+
+        $zip = new \ZipArchive();
+        abort_if($zip->open($zipPath, \ZipArchive::CREATE) !== true, 500, 'Não foi possível criar o ficheiro ZIP.');
+        foreach ($files as ['path' => $path, 'name' => $name]) {
+            $zip->addFile($path, $name);
+        }
+        $zip->close();
+
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment;filename="' . $zipName . '"');
+        header('Content-Length: ' . filesize($zipPath));
+        header('Cache-Control: max-age=0');
+        readfile($zipPath);
+
+        foreach ($files as ['path' => $path]) {
+            @unlink($path);
+        }
+        @unlink($zipPath);
+        @rmdir($tmpDir);
+        exit;
     }
 
-    // ── Incomplete log detection ──────────────────────────────────────────────
+    // ── Sheet builder ─────────────────────────────────────────────────────────
 
-    /**
-     * Returns ['Person Name' => ['2025-05-01', '2025-05-03', ...], ...]
-     * Only for logs matching the current export filters.
-     */
-    private function findIncompleteLogs(Request $request): array
+    private function buildAttendanceSheet(Worksheet $sheet, User $user, int $month, int $year): void
     {
-        $query = Logs::with('user')
-            ->where('status', 'approved')
-            ->where(fn($q) => $q->whereNull('saida')
-                ->orWhere('saida', '00:00')
-                ->orWhere('saida', '00:00:00'));
+        $monthName   = self::MONTHS_PT[$month];
+        $daysInMonth = Carbon::create($year, $month, 1)->daysInMonth;
+        $holidays    = $this->getPortugueseHolidayDates($year);
+        $lastDataRow = $daysInMonth + 2;
+        $totalRow    = $daysInMonth + 3;
+        $avgRow      = $daysInMonth + 4;
 
-        if ($request->filled('name')) {
-            $query->whereHas('user', fn($q) => $q->where('name', $request->name));
+        $entrada      = $user->hora_entrada    ?? '09:00';
+        $inicioAlmoco = $user->inicio_almoco   ?? '13:00';
+        $fimAlmoco    = Carbon::parse($inicioAlmoco)->addHour()->format('H:i');
+        $saida        = $user->hora_saida      ?? '18:00';
+
+        // Absences this month (keyed by date string)
+        $absences = Absence::where('user_id', $user->id)
+            ->whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->get()
+            ->keyBy(fn($a) => $a->date->format('Y-m-d'));
+
+        // Birthday in this month
+        $birthdayStr = null;
+        if ($user->birthdate) {
+            $bday = $user->birthdate->copy()->setYear($year);
+            if ((int) $bday->format('m') === $month) {
+                $birthdayStr = $bday->format('Y-m-d');
+            }
         }
-        if ($request->filled('month')) {
-            $query->where('data', 'like', $request->month . '%');
-        }
-
-        $incomplete = [];
-        foreach ($query->orderBy('data')->get() as $log) {
-            $incomplete[$log->user->name][] = $log->data;
-        }
-        return $incomplete;
-    }
-
-    /**
-     * Same but scoped to a single user (for exportuserlog).
-     * Returns a flat array of date strings.
-     */
-    private function findIncompleteLogsForUser(int $userId, Request $request): array
-    {
-        $query = Logs::where('user_id', '=', $userId, 'and')
-            ->where('status', 'approved')
-            ->where(fn($q) => $q->whereNull('saida')
-                ->orWhere('saida', '00:00')
-                ->orWhere('saida', '00:00:00'));
-
-        if ($request->filled('month')) {
-            $query->where('data', 'like', $request->month . '%');
-        }
-
-        return $query->orderBy('data')->pluck('data')->toArray();
-    }
-
-    // ── Core sheet builder ────────────────────────────────────────────────────
-private function buildMonthSheet(Worksheet $sheet, User $user, int $month, int $year, $logs): void
-    {
-        $monthName    = self::MONTHS_PT[$month];
-        $daysInMonth  = Carbon::create($year, $month, 1)->daysInMonth;
-        
-        // Fallbacks estáticos caso o log não tenha registo de almoço
-        $inicioAlmocoPadrao = $user->inicio_almoco ?? '12:30';
-        $fimAlmocoPadrao    = Carbon::parse($inicioAlmocoPadrao)->addHour()->format('H:i');
-        
-        $holidays     = $this->getPortugueseHolidays($year);
-        $lastDataRow  = $daysInMonth + 2;
-        $totalRow     = $daysInMonth + 3;
-        $avgRow       = $daysInMonth + 4;
 
         // ── Row 1: header ─────────────────────────────────────────────────────
         $headerData = [
             'A1' => ['Trabalhador:', true,  Alignment::HORIZONTAL_LEFT],
-            'B1' => [$user->name,     false, Alignment::HORIZONTAL_LEFT],
+            'B1' => [$user->name,    false, Alignment::HORIZONTAL_LEFT],
             'C1' => ['Mês:',         true,  Alignment::HORIZONTAL_RIGHT],
             'D1' => [$monthName,     false, Alignment::HORIZONTAL_LEFT],
             'E1' => ['Ano:',         true,  Alignment::HORIZONTAL_RIGHT],
@@ -266,7 +200,9 @@ private function buildMonthSheet(Worksheet $sheet, User $user, int $month, int $
             $dateStr   = $date->format('Y-m-d');
             $row       = $day + 2;
             $isWeekend = $date->isWeekend();
-            $isHoliday = in_array($dateStr, $holidays);
+            $isHoliday = isset($holidays[$dateStr]);
+            $absence   = $absences->get($dateStr);
+            $isBirthday = $dateStr === $birthdayStr;
 
             $fillRgb = match (true) {
                 $isWeekend => self::FILL_WEEKEND,
@@ -280,28 +216,26 @@ private function buildMonthSheet(Worksheet $sheet, User $user, int $month, int $
                 ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                 ->setVertical(Alignment::VERTICAL_CENTER);
 
-             $log = $logs->get($dateStr);
- 
-            if ($log && !$isWeekend && !$isHoliday) {
-                $this->setTimeCell($sheet, "B{$row}", $log->entrada);
- 
-                // Início do almoço: sempre do perfil do utilizador
-                $inicioAlmoco = $inicioAlmocoPadrao;
- 
-                // Fim do almoço: usa o valor real do log se existir, senão usa o padrão
-                $temFimAlmocoValido = !empty($log->{'final_almoço'})
-                    && !in_array(trim($log->{'final_almoço'}), ['00:00', '00:00:00']);
-                $fimAlmoco = $temFimAlmocoValido ? trim($log->{'final_almoço'}) : $fimAlmocoPadrao;
- 
-                $this->setTimeCell($sheet, "C{$row}", $inicioAlmoco);
-                $this->setTimeCell($sheet, "D{$row}", $fimAlmoco);
- 
-                $exitOk = $log->saida && !in_array(trim($log->saida), ['00:00', '00:00:00']);
-                if ($exitOk) $this->setTimeCell($sheet, "E{$row}", $log->saida);
-                if ($log->obs) $sheet->setCellValue("G{$row}", $log->obs);
+            if (!$isWeekend && !$isHoliday) {
+                $leaveEmpty = $isBirthday || ($absence && in_array($absence->type, ['vacation', 'absent']));
+
+                if ($leaveEmpty) {
+                    $obs = match (true) {
+                        $isBirthday                   => 'Aniversário',
+                        $absence->type === 'vacation' => 'Férias',
+                        default                       => 'Ausente',
+                    };
+                    $sheet->setCellValue("G{$row}", $obs);
+                } else {
+                    $this->setTimeCell($sheet, "B{$row}", $entrada);
+                    $this->setTimeCell($sheet, "C{$row}", $inicioAlmoco);
+                    $this->setTimeCell($sheet, "D{$row}", $fimAlmoco);
+                    $this->setTimeCell($sheet, "E{$row}", $saida);
+
+                }
             }
- 
-            if ($isHoliday && $log?->obs) $sheet->setCellValue("G{$row}", $log->obs);
+
+            if ($isHoliday) $sheet->setCellValue("G{$row}", $holidays[$dateStr]);
 
             $sheet->setCellValue("F{$row}", "=IFERROR(IF(OR(B{$row}=0,E{$row}=0),0,IF(AND(B{$row}<D{$row},E{$row}>C{$row}),(E{$row}-B{$row})-(MIN(E{$row},D{$row})-MAX(B{$row},C{$row})),E{$row}-B{$row})),0)");
             $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode('[h]:mm');
@@ -372,14 +306,6 @@ private function buildMonthSheet(Worksheet $sheet, User $user, int $month, int $
         return $s;
     }
 
-    private function fetchLogs(int $userId, string $monthPrefix)
-    {
-        return Logs::where('user_id', '=', $userId, 'and')
-            ->where('status', 'approved')
-            ->where('data', 'like', $monthPrefix . '%')
-            ->get()->keyBy('data');
-    }
-
     private function setTimeCell(Worksheet $sheet, string $cell, string $time): void
     {
         $time = trim($time);
@@ -401,109 +327,11 @@ private function buildMonthSheet(Worksheet $sheet, User $user, int $month, int $
         exit;
     }
 
-    private function streamAllUsersZip(int $year): never
+    private function getPortugueseHolidayDates(int $year): array
     {
-        $tmpFiles = [];
-        foreach (User::all() as $user) {
-            $spreadsheet = $this->makeSpreadsheet();
-            $sheetsAdded = 0;
-
-            foreach (self::MONTHS_PT as $month => $monthName) {
-                $logs = $this->fetchLogs($user->id, sprintf('%d-%02d', $year, $month));
-                if ($logs->isEmpty()) continue;
-                $sheet = $spreadsheet->createSheet()->setTitle($monthName);
-                $this->buildMonthSheet($sheet, $user, $month, $year, $logs);
-                $sheetsAdded++;
-            }
-
-            // Skip users with no logs entirely — no file generated for them
-            if ($sheetsAdded === 0) continue;
-
-            $tmp = tempnam(sys_get_temp_dir(), 'ms_') . '.xlsx';
-            (new Xlsx($spreadsheet))->save($tmp);
-            $tmpFiles["Mindshaker - {$user->name} - {$year}.xlsx"] = $tmp;
-        }
-
-        $zipPath = tempnam(sys_get_temp_dir(), 'ms_zip_') . '.zip';
-        $zip = new \ZipArchive();
-        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
-        foreach ($tmpFiles as $name => $path) $zip->addFile($path, $name);
-        $zip->close();
-
-        header('Content-Type: application/zip');
-        header("Content-Disposition: attachment; filename=\"Mindshaker_Logs_{$year}.zip\"");
-        header('Content-Length: ' . filesize($zipPath));
-        header('Cache-Control: max-age=0');
-        readfile($zipPath);
-
-        unlink($zipPath);
-        foreach ($tmpFiles as $path) @unlink($path);
-        exit;
-    }
-
-    private function streamCsv(Request $request, ?int $userId = null): never
-    {
-        $query = Logs::with('user')->where('status', 'approved');
-        if ($userId)                   $query->where('user_id', $userId);
-        if ($request->filled('name'))  $query->whereHas('user', fn($q) => $q->where('name', $request->name));
-        if ($request->filled('month')) $query->where('data', 'like', $request->month . '%');
-
-        $logs = $query->orderBy('data', 'DESC')->get();
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        foreach (
-            [
-                'A' => 'Trabalhador',
-                'B' => 'Data',
-                'C' => 'Hora de Entrada',
-                'D' => 'Hora de Saída',
-                'E' => 'Total Horas',
-                'F' => 'Observações'
-            ] as $col => $label
-        ) {
-            $sheet->setCellValue("{$col}1", $label);
-        }
-        $row = 2;
-        foreach ($logs as $log) {
-            $sheet->setCellValue("A{$row}", $log->user->name);
-            $sheet->setCellValue("B{$row}", $log->data);
-            $sheet->setCellValue("C{$row}", $log->entrada);
-            $sheet->setCellValue("D{$row}", $log->saida);
-            $sheet->setCellValue("E{$row}", $log->total_horas);
-            $sheet->setCellValue("F{$row}", $log->obs);
-            $row++;
-        }
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Csv($spreadsheet);
-        $writer->setDelimiter(';')->setEnclosure('"')->setLineEnding("\r\n");
-        header('Content-Type: text/csv; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="' . ($userId ? 'Mylogs' : 'logs') . '.csv"');
-        header('Cache-Control: max-age=0');
-        $writer->save('php://output');
-        exit;
-    }
-
-    private function safeSheetName(string $name): string
-    {
-        return substr(preg_replace('/[\/\\\?\*\[\]:]/', '', $name), 0, 31);
-    }
-
-    private function getPortugueseHolidays(int $year): array
-    {
-        $fixed = [
-            "{$year}-01-01",
-            "{$year}-04-25",
-            "{$year}-05-01",
-            "{$year}-06-10",
-            "{$year}-08-15",
-            "{$year}-10-05",
-            "{$year}-11-01",
-            "{$year}-12-01",
-            "{$year}-12-08",
-            "{$year}-12-25",
-        ];
-        $easter        = Carbon::create($year, 3, 21)->addDays(easter_days($year));
-        $goodFriday    = $easter->copy()->subDays(2)->format('Y-m-d');
-        $corpusChristi = $easter->copy()->addDays(60)->format('Y-m-d');
-        return array_merge($fixed, [$goodFriday, $corpusChristi]);
+        return \App\Models\Holiday::whereYear('date', $year)
+            ->get()
+            ->mapWithKeys(fn($h) => [$h->date->format('Y-m-d') => $h->name])
+            ->toArray();
     }
 }

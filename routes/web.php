@@ -1,84 +1,74 @@
 <?php
- 
+
+use App\Http\Controllers\AdminHolidayController;
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\CalendarFeedController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\usercontroller;
-use App\Http\Controllers\logscontroller;
-use App\Http\Controllers\Exportcontroller;
-use App\Http\Controllers\Logapprovalcontroller;
-use App\Http\Controllers\Esp32controller;
- 
- 
+use Illuminate\Support\Facades\Route;
+
+// Public calendar feed — no auth, protected by per-user token
+Route::get('/calendar/feed/{token}.ics', [CalendarFeedController::class, 'feed'])
+    ->name('calendar.feed');
+
 Route::get('/', function () {
-    if (Auth::check()) {
-        return redirect()->route('home');
-    }
-    return redirect()->route('login');
+    return Auth::check()
+        ? redirect()->route('calendar')
+        : redirect()->route('login');
 });
- 
 
-
-Route::post('/esp32/ponto', [Esp32controller::class, 'receberPontoDoEsp32']);
-Route::post('/esp32/enroll-status', [usercontroller::class, 'receberStatusEnroll']);
-Route::post('/esp32/delete-finger-status', [usercontroller::class, 'receberStatusDeleteFinger']);
- 
 Route::middleware('auth')->group(function () {
- 
-    
-    Route::get('/dashboard', fn() => view('user/home'))->middleware(['verified'])->name('dashboard');
- 
+
+    // Profile (Breeze default)
     Route::get('/profile',    [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::post('/createlog',                   [logscontroller::class, 'createlog'])->name('createlog');
-    Route::get('/export/logs',                  [Exportcontroller::class, 'exportuserlog'])->name('exportuserlog');
-    
-    Route::prefix('user')->group(function () {
-        Route::get('/logs',                         [logscontroller::class, 'userlogs'])->name('userlogs');
-        Route::get('/home',                         [logscontroller::class, 'homepage'])->name('home');
-        Route::post('/home/create',                 [logscontroller::class, 'userlogcreate'])->name('logcreate');
-        Route::get('/createlogview',                [logscontroller::class, 'usercreatelogview'])->name('usercreatelogview');
-        Route::get('/clockfinish/{logs}',           [logscontroller::class, 'userlogup'])->name('clockfinish');
-        Route::put('/clockfinishupdate/{logs}',     [logscontroller::class, 'userlogupdate'])->name('clockfinishupdate');
-        Route::get('/looklog/{logs}',               [logscontroller::class, 'looklog'])->name('userlooklog');
-        Route::get('/editlog/{logs}',               [logscontroller::class, 'editlog'])->name('usereditlog');
-        Route::put('/editlog/{logs}/update',        [logscontroller::class, 'updatelog'])->name('updateuserlog');
-        Route::delete('/delete/{logs}',             [logscontroller::class, 'deletelog'])->name('deleteuserlog');
-    });
- 
+
+    // Calendar — user's own
+    Route::get('/calendar',                    [CalendarController::class, 'show'])->name('calendar');
+    Route::get('/calendar/{year}/overview',    [CalendarController::class, 'yearOverview'])->name('calendar.overview')->where('year', '\d{4}');
+    Route::get('/calendar/week/{year?}/{week?}', [CalendarController::class, 'week'])->name('calendar.week')->where(['year' => '\d{4}', 'week' => '\d{1,2}']);
+    Route::get('/calendar/{year}/{month}',     [CalendarController::class, 'show'])->name('calendar.month')->where(['year' => '\d{4}', 'month' => '\d{1,2}']);
+    Route::post('/calendar/range',             [CalendarController::class, 'markRange'])->name('calendar.range');
+    Route::delete('/calendar/range',           [CalendarController::class, 'removeRange'])->name('calendar.removeRange');
+    Route::delete('/calendar/{date}',          [CalendarController::class, 'remove'])->name('calendar.remove')
+        ->where('date', '\d{4}-\d{2}-\d{2}');
+
+    // Admin routes
     Route::prefix('admin')->middleware('is_admin')->group(function () {
 
- 
-        Route::get('/logs',                         [logscontroller::class, 'adminlogs'])->name('adminlogs');
-        Route::get('/createlogview',                [logscontroller::class, 'createlogview'])->name('createlogview');
-        
-        Route::delete('/delete/{logs}',             [logscontroller::class, 'deletelog'])->name('deletelog');
-        Route::get('/looklog/{logs}',               [logscontroller::class, 'looklog']);
-        Route::get('/editlog/{logs}',               [logscontroller::class, 'editlog']);
-        Route::put('/editlog/{logs}/update',        [logscontroller::class, 'updatelog'])->name('updatelog');
-        Route::get('/admin-logs',                   [logscontroller::class, 'adminLogsAudit'])->name('admin.adminlogs');
- 
-        Route::get('/export',                       [Exportcontroller::class, 'export'])->name('export');
-        Route::get('/export/users',                 [usercontroller::class, 'exportusers'])->name('exportusers');
- 
-        Route::get('/approve-log/{id}',             [Logapprovalcontroller::class, 'approveLog'])->name('admin.approve_log');
-        Route::get('/reject-log/{id}',              [Logapprovalcontroller::class, 'rejectLog'])->name('admin.reject_log');
- 
-        Route::get('/approve-new-log/{id}',         [Logapprovalcontroller::class, 'approveNewLog'])->name('admin.approve_new_log');
-        Route::get('/reject-new-log/{id}',          [Logapprovalcontroller::class, 'rejectNewLog'])->name('admin.reject_new_log');
- 
-        Route::get('/users',                        [usercontroller::class, 'userlist'])->name('userlist');
-        Route::put('/admin/users/{user}/finger-choice', [usercontroller::class, 'updateFingerChoice'])->name('users.update_finger_choice');
-        Route::post('/users/{id}/delete-finger',    [usercontroller::class, 'deleteFinger'])->name('users.delete_finger');
-        Route::get('/createuserview',               [usercontroller::class, 'createuserview'])->name('createuserview');
-        Route::post('/usercreate',                  [usercontroller::class, 'createuser'])->name('createuser');
-        Route::put('/change/{user}',                [usercontroller::class, 'changeusertype'])->name('changeusertype');
-        Route::get('/users/{id}/finger-status',     [usercontroller::class, 'checkFingerStatus'])->name('users.finger_status');
+        // Users
+        Route::get('/users',              [UserController::class, 'index'])->name('admin.users');
+        Route::get('/users/create',       [UserController::class, 'create'])->name('admin.users.create');
+        Route::post('/users',             [UserController::class, 'store'])->name('admin.users.store');
+        Route::get('/users/{user}/edit',  [UserController::class, 'edit'])->name('admin.users.edit');
+        Route::put('/users/{user}',       [UserController::class, 'update'])->name('admin.users.update');
+        Route::delete('/users/{user}',    [UserController::class, 'destroy'])->name('admin.users.destroy');
+
+        // Admin calendar (view/edit any user's calendar)
+        Route::get('/calendar/{user}',                    [CalendarController::class, 'adminShow'])->name('admin.calendar');
+        Route::get('/calendar/{user}/{year}/{month}',     [CalendarController::class, 'adminShow'])->name('admin.calendar.month');
+        Route::post('/calendar/{user}/range',             [CalendarController::class, 'adminMarkRange'])->name('admin.calendar.range');
+        Route::delete('/calendar/{user}/range',          [CalendarController::class, 'adminRemoveRange'])->name('admin.calendar.removeRange');
+        Route::delete('/calendar/{user}/{date}',          [CalendarController::class, 'adminRemove'])->name('admin.calendar.remove')
+            ->where('date', '\d{4}-\d{2}-\d{2}');
+
+        // Holidays
+        Route::get('/holidays/{year?}',      [AdminHolidayController::class, 'index'])->name('admin.holidays')->where('year', '\d{4}');
+        Route::post('/holidays/sync/{year}', [AdminHolidayController::class, 'sync'])->name('admin.holidays.sync')->where('year', '\d{4}');
+        Route::post('/holidays',             [AdminHolidayController::class, 'store'])->name('admin.holidays.store');
+        Route::patch('/holidays/{holiday}',  [AdminHolidayController::class, 'update'])->name('admin.holidays.update');
+        Route::delete('/holidays/{holiday}', [AdminHolidayController::class, 'destroy'])->name('admin.holidays.destroy');
+
+        // Vacation overview
+        Route::get('/vacation/{year?}', [CalendarController::class, 'vacationOverview'])->name('admin.vacation')->where('year', '\d{4}');
+
+        // Export
+        Route::get('/export',          [ExportController::class, 'index'])->name('admin.export');
+        Route::post('/export/download', [ExportController::class, 'download'])->name('admin.export.download');
     });
- 
-    Route::post('/users/{id}/enroll', [usercontroller::class, 'enroll'])->name('users.enroll');
 });
- 
- 
-require __DIR__.'/auth.php';
+
+require __DIR__ . '/auth.php';

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import tailwindcss from '@tailwindcss/vite'
+import tailwindcss from '@tailwindcss/vite';
+import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
     plugins: [
@@ -9,10 +10,17 @@ export default defineConfig({
             refresh: true,
         }),
         tailwindcss(),
+        vue({
+            template: {
+                transformAssetUrls: {
+                    base: null,
+                    includeAbsolute: false,
+                },
+            },
+        }),
     ],
     server: {
-        // MUDANÇA AQUI: Alterado de '0.0.0.0' para 'localhost'
-        host: 'localhost', 
+        host: 'localhost',
         port: 5173,
         strictPort: true,
         ...(process.env.DDEV_PRIMARY_URL_WITHOUT_PORT
