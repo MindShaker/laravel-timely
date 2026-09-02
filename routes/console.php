@@ -13,3 +13,6 @@ Schedule::command('calendar:remind')->weeklyOn(1, '06:00');
 
 // Every Monday in February at 09:00 — remind users to plan vacations before 31 March
 Schedule::command('vacation:remind')->weeklyOn(1, '09:00')->when(fn () => now()->month === 2);
+
+// Jan 1 at 01:00 — pull next year's Portuguese holidays
+Schedule::command('holidays:sync')->yearlyOn(1, 1, '01:00');
