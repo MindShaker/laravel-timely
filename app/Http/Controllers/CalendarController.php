@@ -49,8 +49,13 @@ class CalendarController extends Controller
             }
         }
 
-        return $this->saveRange(Auth::user(), $request->start, $request->end,
-                                $request->type, $request->boolean('remote'));
+        return $this->saveRange(
+            Auth::user(),
+            $request->start,
+            $request->end,
+            $request->type,
+            $request->boolean('remote')
+        );
     }
 
     public function adminMarkRange(Request $request, User $user)
@@ -62,8 +67,13 @@ class CalendarController extends Controller
             'remote' => 'boolean',
         ]);
 
-        return $this->saveRange($user, $request->start, $request->end,
-                                $request->type, $request->boolean('remote'));
+        return $this->saveRange(
+            $user,
+            $request->start,
+            $request->end,
+            $request->type,
+            $request->boolean('remote')
+        );
     }
 
     public function remove(string $date)
@@ -215,9 +225,18 @@ class CalendarController extends Controller
         }
 
         $monthNames = [
-            1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março',    4 => 'Abril',
-            5 => 'Maio',    6 => 'Junho',     7 => 'Julho',     8 => 'Agosto',
-            9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro',
+            1 => 'Janeiro',
+            2 => 'Fevereiro',
+            3 => 'Março',
+            4 => 'Abril',
+            5 => 'Maio',
+            6 => 'Junho',
+            7 => 'Julho',
+            8 => 'Agosto',
+            9 => 'Setembro',
+            10 => 'Outubro',
+            11 => 'Novembro',
+            12 => 'Dezembro',
         ];
 
         $monthsData = [];
@@ -266,9 +285,18 @@ class CalendarController extends Controller
         }
 
         $monthNames = [
-            1 => 'Jan', 2 => 'Fev', 3 => 'Mar',  4 => 'Abr',
-            5 => 'Mai', 6 => 'Jun', 7 => 'Jul',   8 => 'Ago',
-            9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez',
+            1 => 'Jan',
+            2 => 'Fev',
+            3 => 'Mar',
+            4 => 'Abr',
+            5 => 'Mai',
+            6 => 'Jun',
+            7 => 'Jul',
+            8 => 'Ago',
+            9 => 'Set',
+            10 => 'Out',
+            11 => 'Nov',
+            12 => 'Dez',
         ];
 
         $rows = $users->map(function ($user) use ($data) {
@@ -331,9 +359,11 @@ class CalendarController extends Controller
             }
         }
 
-        $vacationCount = count(array_filter($yearStatusDays, fn($s) =>
+        $vacationCount = count(array_filter(
+            $yearStatusDays,
+            fn($s) =>
             $s['type'] === 'vacation'
-            && str_starts_with($s['date'], sprintf('%04d-%02d', $year, $month))
+                && str_starts_with($s['date'], sprintf('%04d-%02d', $year, $month))
         ));
 
         $yearVacationCount = Absence::where('user_id', $user->id)
@@ -347,9 +377,18 @@ class CalendarController extends Controller
         $nextMonth = Carbon::create($year, $month, 1)->addMonth();
 
         $monthNames = [
-            1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
-            5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
-            9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro',
+            1 => 'Janeiro',
+            2 => 'Fevereiro',
+            3 => 'Março',
+            4 => 'Abril',
+            5 => 'Maio',
+            6 => 'Junho',
+            7 => 'Julho',
+            8 => 'Agosto',
+            9 => 'Setembro',
+            10 => 'Outubro',
+            11 => 'Novembro',
+            12 => 'Dezembro',
         ];
 
         $props = [
@@ -434,7 +473,8 @@ class CalendarController extends Controller
         while ($current->lte($end)) {
             $dateStr = $current->format('Y-m-d');
 
-            if (!$current->isWeekend()
+            if (
+                !$current->isWeekend()
                 && !in_array($dateStr, $holidayDates)
                 && !in_array($dateStr, $birthdayDates)
             ) {

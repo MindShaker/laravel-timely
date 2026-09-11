@@ -68,17 +68,13 @@ export function useCalendar({
         _blockTimer = setTimeout(() => { blockReason.value = null; }, 3000);
     }
 
-    // Initialise status days from cache or server data
+    // Server-provided data is always the source of truth (it's already fresh
+    // on every Inertia visit); localStorage is only a write-through mirror so
+    // that an optimistic update made just before a reload isn't lost while
+    // the request is still in flight (see the watcher below).
+    statusDays.value = [...initialStatusDays];
     if (cacheKey) {
-        try {
-            const cached = localStorage.getItem(cacheKey);
-            statusDays.value = cached ? JSON.parse(cached) : [...initialStatusDays];
-            if (!cached) localStorage.setItem(cacheKey, JSON.stringify(statusDays.value));
-        } catch {
-            statusDays.value = [...initialStatusDays];
-        }
-    } else {
-        statusDays.value = [...initialStatusDays];
+        try { localStorage.setItem(cacheKey, JSON.stringify(statusDays.value)); } catch {}
     }
 
     // Initialise selected people from cache
